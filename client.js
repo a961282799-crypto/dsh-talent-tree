@@ -108,6 +108,9 @@ window.__ModuleLoader__.load({
       'medal.summary': '铜 {b} · 银 {s} · 金 {g}',
       'export.footer': '学习天赋树 · DeepSeek Harness',
       'export.filename': '天赋树',
+      'review.today': '今日待复习 {n}',
+      'review.short': '待复习 {n}',
+      'prompt.reviewBatch': '今天要复习这 {n} 个知识点：{list}。请一个一个来：先抛出它的钩子，再出一道题考我；等我回答后用 techtree_record 更新（答得好就刷新复习时间、去掉需加固标记，答得不好就降一级或标记需加固并当场补上），然后进入下一个。全部结束后告诉我今天的复习结果。',
       'chip.open': '打开天赋树',
       'legend.lit': '已点亮',
       'legend.available': '可以学',
@@ -193,6 +196,9 @@ window.__ModuleLoader__.load({
       'medal.summary': 'Bronze {b} · Silver {s} · Gold {g}',
       'export.footer': 'Learning talent tree · DeepSeek Harness',
       'export.filename': 'talent-tree',
+      'review.today': '{n} to review today',
+      'review.short': '{n} due',
+      'prompt.reviewBatch': 'Today I need to review these {n} points: {list}. Go one at a time: open with its hook, then quiz me; after my answer update it with techtree_record (good answer: refresh the review time and clear the needs-work flag; weak answer: drop a level or mark it weak and fix the gap right away), then move on. Summarise today\'s review at the end.',
       'chip.open': 'Open talent tree',
       'legend.lit': 'Lit',
       'legend.available': 'Learnable',
@@ -397,6 +403,32 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
 .tt-tex>div>*{display:inline!important;margin:0!important;padding:0!important;color:inherit!important;font-size:inherit!important}
 .tt-tex .katex{font-size:1.08em}
 .tt-node-name .tt-tex .katex{font-size:1em}
+.tt-shape-concept{border-radius:15px}
+.tt-shape-theorem{border-radius:5px;border-width:2px}
+.tt-shape-method{border-radius:15px;border-left-width:5px;padding-left:6px}
+.tt-shape-proof_idea{border-radius:22px 5px 22px 5px}
+.tt-shape-skill{border-radius:999px;padding-left:8px}
+.tt-goal-node{scale:1.1;z-index:1}
+.tt-badge-icon{display:grid;place-items:center}
+.tt-bshape-theorem{border-radius:9px}
+.tt-bshape-method{width:29px;height:29px;margin:0 2px;border-radius:7px;transform:rotate(45deg)}
+.tt-bshape-method>.tt-badge-icon{transform:rotate(-45deg)}
+.tt-bshape-method>.tt-dot{transform:rotate(-45deg)}
+.tt-bshape-proof_idea{border-radius:50% 5px 50% 5px}
+.tt-bshape-skill{border-radius:50% 50% 50% 50%/32% 32% 68% 68%}
+.tt-legend{flex-direction:column;align-items:flex-start;gap:5px}
+.tt-legend-row{display:flex;flex-wrap:wrap;gap:6px}
+.tt-mini{display:inline-block;width:11px;height:11px;border:1.5px solid var(--tt-fg3);background:var(--tt-bg2);border-radius:50%}
+.tt-mini.tt-bshape-method{width:9px;height:9px;margin:0 1px;border-radius:2px}
+.tt-mini.tt-bshape-theorem{border-radius:3px}
+.tt-dot-fading{background:#f59e0b}
+.tt-review{display:inline-flex;align-items:center;gap:6px;flex:none;height:30px;padding:0 12px;border-radius:999px;border:1px solid color-mix(in srgb,#f59e0b 55%,transparent);background:color-mix(in srgb,#f59e0b 12%,var(--tt-bg));color:color-mix(in srgb,#b45309 85%,var(--tt-fg));font:inherit;font-size:12.5px;font-weight:650;cursor:pointer;white-space:nowrap;animation:tt-nudge 3s ease-in-out infinite}
+.tt-review:hover{background:color-mix(in srgb,#f59e0b 20%,var(--tt-bg))}
+@keyframes tt-nudge{0%,88%,100%{transform:none}92%{transform:rotate(-3deg)}96%{transform:rotate(3deg)}}
+.tt-chip-due{flex:none;margin-left:2px;padding:0 7px;border-radius:999px;font-size:10.5px;font-weight:700;line-height:18px;color:#92400e;background:#fde68a}
+.tt-lib-name{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.tt-lib-name>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (prefers-reduced-motion:reduce){.tt-review{animation:none}}
 `
 
     function Style() {
@@ -432,6 +464,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
     const TargetIcon = () => svg(15, [h('circle', { key: 'a', cx: 12, cy: 12, r: 7 }), h('circle', { key: 'b', cx: 12, cy: 12, r: 2.5, fill: 'currentColor' }), h('path', { key: 'c', d: 'M12 2v3M12 19v3M2 12h3M19 12h3' })])
     const DownloadIcon = () => svg(15, [h('path', { key: 'p', d: 'M12 4v11M7 10l5 5 5-5M5 20h14' })])
     const BoltIcon = () => svg(14, [h('path', { key: 'p', d: 'M13 2 4 14h7l-1 8 9-12h-7z', fill: 'currentColor', stroke: 'none' })])
+    const ClockIcon = () => svg(14, [h('circle', { key: 'c', cx: 12, cy: 12, r: 8.5 }), h('path', { key: 'p', d: 'M12 7.5V12l3 2' })])
     const RefreshIcon = () => svg(15, [h('path', { key: 'p', d: 'M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4' })])
 
     // ---- math ---------------------------------------------------------------
@@ -775,11 +808,42 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
       return due ? due.id : null
     }
 
+    const NODE_TYPES = ['concept', 'theorem', 'method', 'proof_idea', 'skill']
+
+    /** Today's review queue: points that need shoring up first, then lit points whose review is due (oldest first). */
+    function reviewQueue(nodes, now) {
+      return nodes
+        .filter(n => n.weak || fading(n, now))
+        .sort((a, b) => (b.weak ? 1 : 0) - (a.weak ? 1 : 0) || (a.reviewedAt || 0) - (b.reviewedAt || 0))
+    }
+
+    function reviewPrompt(t, due) {
+      return fill(t('prompt.reviewBatch'), { list: due.map(n => `${richToPlain(n.name)}（${n.id}）`).join('、'), n: due.length })
+    }
+
     // ---- export -------------------------------------------------------------
 
     const EXPORT_FONT = '"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif'
     const EXPORT_MEDAL = ['', '#c8834c', '#93a4bd', '#eeb031']
     const EXPORT_TINT = ['', '#f7e9dc', '#e8eef6', '#fcf1d4']
+
+    /** Card corner radii per knowledge type (matches the .tt-shape-* styles). */
+    function exportRadii(type, h) {
+      if (type === 'theorem') return 5
+      if (type === 'proof_idea') return [22, 5, 22, 5]
+      if (type === 'skill') return h / 2
+      return 15
+    }
+
+    /** Badge outline per knowledge type (matches the .tt-bshape-* styles). */
+    function exportBadgePath(c, type, x, y, r) {
+      c.beginPath()
+      if (type === 'theorem') c.roundRect(x - r, y - r, 2 * r, 2 * r, 9)
+      else if (type === 'method') { const d = r * 1.2; c.moveTo(x, y - d); c.lineTo(x + d, y); c.lineTo(x, y + d); c.lineTo(x - d, y); c.closePath() }
+      else if (type === 'proof_idea') c.roundRect(x - r, y - r, 2 * r, 2 * r, [r, 5, r, 5])
+      else if (type === 'skill') c.roundRect(x - r, y - r, 2 * r, 2 * r, [r, r, r * 1.3, r * 1.3])
+      else c.arc(x, y, r, 0, Math.PI * 2)
+    }
 
     function fitText(c, text, max) {
       if (c.measureText(text).width <= max) return text
@@ -871,7 +935,8 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
         const m = n.mastery || 0
         c.save()
         if (state === 'lit') { c.shadowColor = EXPORT_MEDAL[m]; c.shadowBlur = 14 }
-        c.beginPath(); c.roundRect(x, y, NODE_W, cardH, 15)
+        const radii = exportRadii(n.type, cardH)
+        c.beginPath(); c.roundRect(x, y, NODE_W, cardH, radii)
         if (state === 'lit') {
           const g = c.createLinearGradient(x, y, x + NODE_W, y + cardH)
           g.addColorStop(0, EXPORT_TINT[m]); g.addColorStop(0.75, '#ffffff')
@@ -882,13 +947,18 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
         c.setLineDash(state === 'available' ? [5, 4] : [])
         c.lineWidth = goalIds.has(n.id) ? 2.4 : 1.5
         c.strokeStyle = n.weak ? '#f08a24' : state === 'lit' ? EXPORT_MEDAL[m] : state === 'available' ? '#4d6bfe' : '#d5d9df'
-        c.beginPath(); c.roundRect(x, y, NODE_W, cardH, 15); c.stroke()
+        c.lineWidth = n.type === 'theorem' ? Math.max(c.lineWidth, 2) : c.lineWidth
+        c.beginPath(); c.roundRect(x, y, NODE_W, cardH, radii); c.stroke()
+        if (n.type === 'method') {
+          c.fillStyle = c.strokeStyle
+          c.beginPath(); c.roundRect(x, y + 6, 5, cardH - 12, 2.5); c.fill()
+        }
         c.setLineDash([])
         // Badge
         const bx = x + 26
         const by = y + NODE_H / 2
         c.fillStyle = state === 'lit' ? EXPORT_MEDAL[m] : state === 'available' ? '#dfe5ff' : '#e6e8ec'
-        c.beginPath(); c.arc(bx, by, 17, 0, Math.PI * 2); c.fill()
+        exportBadgePath(c, n.type, bx, by, 17); c.fill()
         c.fillStyle = state === 'lit' ? '#ffffff' : state === 'available' ? '#4d6bfe' : '#8f959e'
         c.font = `700 15px ${EXPORT_FONT}`
         c.textAlign = 'center'
@@ -1069,8 +1139,13 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
         mini ? null : h('b', null, `${Math.round(ratio * 100)}%`))
     }
 
-    function Hero({ t, title, nodes, extra }) {
+    function Hero({ t, title, nodes, extra, onReview }) {
       const s = stats(nodes)
+      const due = reviewQueue(nodes, Date.now())
+      const review = due.length && onReview
+        ? h('button', { type: 'button', className: 'tt-review', title: due.map(n => richToPlain(n.name)).join('、'), onClick: () => onReview(due) },
+          h(ClockIcon), fill(t('review.today'), { n: due.length }))
+        : null
       return h('div', { className: 'tt-hero' },
         h(ProgressRing, { lit: s.lit, total: s.total }),
         h('div', { className: 'tt-hero-text' },
@@ -1080,6 +1155,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
             h('span', null, fill(t('frontier'), { n: s.frontier })),
             h('span', { className: 'tt-medals' }, [1, 2, 3].map(level => h('span', { key: level, className: 'tt-medal', title: t(`level.${level}`) },
               h('i', { style: { background: ['', '#c8834c', '#93a4bd', '#eeb031'][level] } }), `${t(`medal.${level}`)} ${s.medals[level]}`))))),
+        review,
         extra || null)
     }
 
@@ -1121,7 +1197,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
         if (!el || !el.clientWidth || !el.clientHeight) return null
         // Room for the legend / zoom bar above and the hint below.
         const padX = 28
-        const padTop = 58
+        const padTop = 92
         const padBottom = 40
         const k = clamp(Math.min((el.clientWidth - padX * 2) / width, (el.clientHeight - padTop - padBottom) / height, 1), MIN_ZOOM, 1)
         return { k, x: (el.clientWidth - width * k) / 2, y: Math.max(padTop, padTop + (el.clientHeight - padTop - padBottom - height * k) / 2) }
@@ -1209,7 +1285,10 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
         const onWheel = event => {
           event.preventDefault()
           const rect = el.getBoundingClientRect()
-          const mouseWheel = event.deltaMode !== 0 || (event.deltaX === 0 && Math.abs(event.deltaY) >= 40 && Number.isInteger(event.deltaY))
+          // A mouse wheel moves in notches (wheelDelta multiples of 120, or line/page mode); with
+          // display scaling its pixel delta is fractional, so the delta alone cannot tell it apart.
+          const notch = typeof event.wheelDeltaY === 'number' && event.wheelDeltaY !== 0 && event.wheelDeltaY % 120 === 0
+          const mouseWheel = event.deltaMode !== 0 || (event.deltaX === 0 && (notch || Math.abs(event.deltaY) >= 50))
           if (event.ctrlKey || event.metaKey || mouseWheel) {
             zoomAt(event.clientX - rect.left, event.clientY - rect.top, Math.exp(-clamp(event.deltaY, -60, 60) * (event.ctrlKey ? 0.01 : 0.004)))
           } else {
@@ -1311,9 +1390,18 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
 
     function Badge({ state, node, isGoal }) {
       const icon = state === 'lit' ? h(StarIcon) : state === 'available' ? h(SparkIcon, { size: 16 }) : isGoal ? h(FlagIcon) : h(LockIcon)
+      const shape = `tt-bshape-${NODE_TYPES.includes(node.type) ? node.type : 'concept'}`
       const cls = state === 'lit' ? `tt-badge tt-badge-lit tt-m-${node.mastery}` : state === 'available' ? 'tt-badge tt-badge-available' : isGoal ? 'tt-badge tt-badge-goal' : 'tt-badge'
-      return h('span', { className: cls }, icon,
-        node.weak ? h('i', { className: 'tt-dot tt-dot-weak' }) : null)
+      return h('span', { className: `${cls} ${shape}` }, h('span', { className: 'tt-badge-icon' }, icon),
+        node.weak ? h('i', { className: 'tt-dot tt-dot-weak' }) : fading(node, Date.now()) ? h('i', { className: 'tt-dot tt-dot-fading' }) : null)
+    }
+
+    /** Small badge-shaped swatch per knowledge type, for the legend. */
+    function TypeLegend({ t, nodes }) {
+      const present = NODE_TYPES.filter(type => nodes.some(n => (n.type || 'concept') === type))
+      if (present.length < 2) return null
+      return h('div', { className: 'tt-legend-row' }, present.map(type => h('span', { key: type, className: 'tt-pill' },
+        h('span', { className: `tt-mini tt-bshape-${type}` }), t(`type.${type}`))))
     }
 
     const SPARKS = [0, 45, 90, 135, 180, 225, 270, 315]
@@ -1359,7 +1447,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
           const isGoal = goalIds.has(n.id)
           const fade = fading(n, now)
           const lit = celebrate && celebrate.ids.has(n.id)
-          const cls = ['tt-node',
+          const cls = ['tt-node', `tt-shape-${NODE_TYPES.includes(n.type) ? n.type : 'concept'}`,
             state === 'lit' ? `tt-lit-${n.mastery}` : `tt-${state}`,
             fade ? 'tt-fading' : '',
             n.weak ? 'tt-weak' : '',
@@ -1525,9 +1613,11 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
           () => notify(t('toast.exportFailed')))
       }
       const legend = h('div', { className: 'tt-overlay tt-legend' },
-        h('span', { className: 'tt-pill' }, h('i', { style: { background: 'linear-gradient(135deg,#c8834c,#eeb031)' } }), t('legend.lit')),
-        h('span', { className: 'tt-pill' }, h('i', { style: { border: '1.5px dashed var(--tt-brand)' } }), t('legend.available')),
-        h('span', { className: 'tt-pill' }, h('i', { style: { background: 'var(--tt-line)' } }), t('legend.locked')))
+        h('div', { className: 'tt-legend-row' },
+          h('span', { className: 'tt-pill' }, h('i', { style: { background: 'linear-gradient(135deg,#c8834c,#eeb031)' } }), t('legend.lit')),
+          h('span', { className: 'tt-pill' }, h('i', { style: { border: '1.5px dashed var(--tt-brand)' } }), t('legend.available')),
+          h('span', { className: 'tt-pill' }, h('i', { style: { background: 'var(--tt-line)' } }), t('legend.locked'))),
+        h(TypeLegend, { t, nodes }))
       const tools = h(React.Fragment, null,
         recommended ? h('button', { type: 'button', className: 'tt-icon-btn', title: t('action.recommend'), 'aria-label': t('action.recommend'), onClick: locate }, h(TargetIcon)) : null,
         h('button', { type: 'button', className: 'tt-icon-btn', title: t('action.export'), 'aria-label': t('action.export'), onClick: doExport }, h(DownloadIcon)),
@@ -1573,7 +1663,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
           ? h(Empty, { t })
           : h(React.Fragment, null,
             h(Hero, {
-              t, title, nodes,
+              t, title, nodes, onReview: due => act(reviewPrompt(t, due)),
               extra: h('button', { type: 'button', className: 'tt-icon-btn', title: t('action.refresh'), 'aria-label': t('action.refresh'), onClick: () => act(t('prompt.refresh')) }, h(RefreshIcon)),
             }),
             h(Stage, { t, title, nodes, goalIds, act, fitKey: `${goalKey}:${nodes.length}` })))
@@ -1641,7 +1731,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
                 'aria-current': entry && entry.goal.id === e.goal.id ? 'true' : 'false',
                 onClick: () => setPicked(e.goal.id),
               },
-              h('span', { className: 'tt-lib-name' }, e.goal.name),
+              h('span', { className: 'tt-lib-name' }, h('span', null, e.goal.name), reviewQueue(e.nodes, now).length ? h('b', { className: 'tt-chip-due' }, fill(t('review.short'), { n: reviewQueue(e.nodes, now).length })) : null),
               h('span', { className: 'tt-bar' }, h('i', { style: { width: `${s.total ? (s.lit / s.total) * 100 : 0}%` } })),
               h('span', { className: 'tt-lib-row' }, h('span', null, fill(t('progress'), { lit: s.lit, total: s.total })), h('span', null, fill(t('medal.summary'), { b: s.medals[1], s: s.medals[2], g: s.medals[3] }))))
             })),
@@ -1651,7 +1741,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
             ? h(Empty, { t, body: t('library.empty') })
             : h(React.Fragment, null,
               h(Hero, {
-                t, title: entry.goal.name, nodes: entry.nodes,
+                t, title: entry.goal.name, nodes: entry.nodes, onReview: due => resume(reviewPrompt(t, due)),
                 extra: h('button', { type: 'button', className: 'tt-btn tt-btn-primary', onClick: () => resume(t('prompt.continue')) }, t('action.continue')),
               }),
               h(Stage, { key: entry.goal.id, t, title: entry.goal.name, nodes: entry.nodes, goalIds, act: resume, fitKey: `${entry.goal.id}:${entry.nodes.length}` }))))
@@ -1671,10 +1761,12 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
       useEffect(() => { rememberSnapshot(snapshot) }, [snapshot])
       if (!snapshot || !Array.isArray(snapshot.nodes) || snapshot.nodes.length === 0) return null
       const s = stats(snapshot.nodes)
-      const goal = snapshot.goals.map(g => g.name).join(' · ')
+      const due = reviewQueue(snapshot.nodes, Date.now()).length
+      const goal = snapshot.goals.map(g => richToPlain(g.name)).join(' · ')
       return h('div', { className: 'tt-scope' }, h(Style), h('button', {
         type: 'button', className: 'tt-chip', title: t('chip.open'), onClick: openTree,
-      }, h(ProgressRing, { lit: s.lit, total: s.total, size: 20 }), h('span', null, `${goal} · ${fill(t('progress'), { lit: s.lit, total: s.total })}`)))
+      }, h(ProgressRing, { lit: s.lit, total: s.total, size: 20 }), h('span', null, `${goal} · ${fill(t('progress'), { lit: s.lit, total: s.total })}`),
+      due ? h('b', { className: 'tt-chip-due' }, fill(t('review.short'), { n: due })) : null))
     }
 
     let boundT = key => key

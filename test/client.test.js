@@ -274,3 +274,41 @@ test('formulas render: $…$ through the built-in TeX renderer, bare √x and x_
     stateImpl = defaultState
   }
 })
+
+test('today\'s review: weak and overdue points, one click quizzes them in order', async () => {
+  const { registrations } = await loadClient()
+  const body = registrations.slots.find(s => s.options.name === 'sidebar.right.pane.tab').component
+  const t = translate(registrations.dicts.techtree)
+  const sent = []
+  const inputActions = { setDraft: d => sent.push(d), submit: () => sent.push('<submit>') }
+  const tree = render(fakeReact.createElement(body, { t, inputActions, useProjection: () => snapshot }))
+  const review = collect(tree, el => el.props.className === 'tt-review')[0]
+  assert.ok(review, 'review button shows when something is due')
+  assert.match(text(review), /今日待复习 2/) // derivative (weak) + continuity (bronze, 10 days)
+  review.props.onClick()
+  assert.match(sent[0], /今天要复习这 2 个知识点：导数的定义（derivative）、连续性（continuity）/)
+  assert.equal(sent[1], '<submit>')
+  // Nothing due: no button.
+  const fresh = { ...snapshot, nodes: snapshot.nodes.map(n => ({ ...n, weak: false, reviewedAt: Date.now() })) }
+  const calm = render(fakeReact.createElement(body, { t, inputActions, useProjection: () => fresh }))
+  assert.equal(collect(calm, el => el.props.className === 'tt-review').length, 0)
+  // The composer chip carries the count too.
+  const chipReg = registrations.slots.find(s => s.options.name === 'conversation.composer.dock')
+  const chip = render(fakeReact.createElement(chipReg.component, { t, ...chipReg.options.inject('s'), useProjection: () => snapshot }))
+  assert.match(text(chip), /待复习 2/)
+})
+
+test('each knowledge type gets its own card and badge shape, plus a legend', async () => {
+  const { registrations } = await loadClient()
+  const body = registrations.slots.find(s => s.options.name === 'sidebar.right.pane.tab').component
+  const t = translate(registrations.dicts.techtree)
+  const tree = render(fakeReact.createElement(body, { t, inputActions: { setDraft() {}, submit() {} }, useProjection: () => snapshot }))
+  const node = id => collect(tree, el => el.props['data-node'] === id)[0]
+  assert.match(node('limit').props.className, /tt-shape-concept/)
+  assert.match(node('rolle_theorem').props.className, /tt-shape-theorem/)
+  assert.match(node('auxiliary_function').props.className, /tt-shape-method/)
+  const badge = collect(node('auxiliary_function'), el => String(el.props.className).startsWith('tt-badge '))[0]
+  assert.match(badge.props.className, /tt-bshape-method/)
+  const legend = collect(tree, el => el.props.className === 'tt-overlay tt-legend')[0]
+  assert.match(text(legend), /概念.*定理.*方法/)
+})
