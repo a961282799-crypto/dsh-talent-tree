@@ -1,0 +1,67 @@
+{
+  "name": "dsh-talent-tree",
+  "version": "0.4.0",
+  "description": "Learning talent tree for DeepSeek Harness: break a topic into prerequisite knowledge points and light them up as you master them.",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "dsh-bundle",
+    "deepseek-harness",
+    "deepseek-harness-plugin",
+    "talent-tree",
+    "skill-tree",
+    "learning",
+    "knowledge-graph",
+    "education"
+  ],
+  "author": "Tao",
+  "license": "MIT",
+  "homepage": "https://github.com/a961282799-crypto/dsh-talent-tree#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/a961282799-crypto/dsh-talent-tree.git"
+  },
+  "bugs": {
+    "url": "https://github.com/a961282799-crypto/dsh-talent-tree/issues"
+  },
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "graph.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "dsh": ">=0.2.1-0 <0.3.0"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-sidebar-right",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-workspace"
+      ]
+    }
+  }
+}

@@ -1,0 +1,6 @@
+- insert:
+    - id: talenttree
+      name: dsh-talent-tree
+      # Optional: keep the knowledge map somewhere else (default: $DSH_HOME/techtree/knowledge.json).
+      # config:
+      #   dataFile: /absolute/path/knowledge.json
