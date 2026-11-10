@@ -12,7 +12,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join } from 'node:path'
 import {
-  GLOSSARY_MAX, HOOK_MAX, NODE_TYPES, buildLibrary, buildSnapshot, describeSnapshot, emptyStore, mergePlan, recordMastery, rememberGoal, validatePlan,
+  GLOSSARY_MAX, HOOK_MAX, NODE_TYPES, buildLibrary, buildSnapshot, describeSnapshot, emptyStore, likelyDuplicates, mapDigest, mergeNodes, mergePlan, recordMastery, rememberGoal, validatePlan,
 } from './graph.js'
 
 export const name = 'dsh-talent-tree'
@@ -22,27 +22,51 @@ const META_KIND = 'techtree/snapshot'
 /** Authenticated read of the whole knowledge map for the left-Sidebar panel. */
 export const LIBRARY_PATH = '/api/techtree/library'
 const PROJECTION_KEY = 'techtree'
+/** A node may rise one level per check; a second raise of the same node inside this window is refused. */
+const RAISE_WINDOW_MS = 60_000
+/** At most this many nodes may rise inside the window (a skip-ahead answer can light a few prerequisites). */
+const MAX_RAISES_PER_WINDOW = 6
 
 const TUTOR_PROMPT = `# Learning talent tree (techtree tools)
 
-The learner keeps a personal "talent tree": a prerequisite graph of knowledge points shown in a sidebar, where mastered points light up like a game.
+The learner keeps a personal "talent tree": a prerequisite graph of knowledge points, where points light up (bronze / silver / gold) only when the learner has shown they understand them. All goals share ONE knowledge map: a point learned for one goal is already lit in every other goal that needs it. The sidebar shows the tree.
 
-When the learner says they want to learn or understand something (e.g. "我想学会拉格朗日中值定理"):
+## Planning a goal
+When the learner wants to learn or understand something (e.g. "我想学会拉格朗日中值定理"):
 1. Ask at most two quick diagnostic questions only if the right depth is unclear; otherwise plan right away.
-2. Call techtree_plan with the goal and the knowledge points needed to truly understand it, each with its direct prerequisites. Include concepts, theorems, methods and the key proof ideas or tricks (for example "constructing an auxiliary function"). Go 2-4 layers deep, stopping at material a student at the learner's level surely knows. Reuse ids returned by earlier techtree calls for the same knowledge. A prerequisite must be strictly more basic than the node that needs it.
-3. Tell the learner which nodes are learnable now and suggest where to start. Do not restate the whole tree; the sidebar shows it.
+2. Call techtree_plan with the goal and the knowledge points needed to truly understand it, each with its direct prerequisites: concepts, theorems, methods and the key proof ideas or tricks (for example "constructing an auxiliary function"). Go 2-4 layers deep, stopping at material a student at the learner's level surely knows. A prerequisite must be strictly more basic than the node that needs it.
+3. REUSE EXISTING POINTS. Before planning, call techtree_view with map=true: it lists every point the learner already has (id, name, mastery). Whenever a point you would add is the same knowledge as a listed point — even under a different wording ("导数定义" = "导数的定义", "泰勒展开" = "泰勒公式") — use that point's exact id and name instead of creating a new one, so the learner never has to learn it twice. Only create a new point for genuinely different knowledge ("方差" is not "协方差").
+4. If techtree_plan reports possible duplicates, decide for each pair: same knowledge → call techtree_merge (from the new id into the existing id); different → leave both. If you notice any two points in the map that are the same knowledge, merge them the same way.
+5. Tell the learner which points are learnable now (mention points already lit from other goals) and suggest where to start. Do not restate the whole tree.
 
-Every node gets a "hook": the single most intriguing formula, idea or question about it — the thing that makes a learner want to open it (e.g. "e^(iπ) + 1 = 0：五个最重要的数为什么能凑成一个等式？", "为什么点积大就说明两个向量'像'？"). One line, concrete, surprising.
+Every node gets a "hook": the single most intriguing formula, idea or question about it — the thing that makes a learner want to open it (e.g. "$e^{i\\pi}+1=0$：五个最重要的数为什么能凑成一个等式？", "为什么点积大就说明两个向量'像'？"). One line, concrete, surprising.
 
-Math notation: in node names, summaries and hooks, write every formula as LaTeX between single dollar signs, e.g. "缩放因子 $\\frac{1}{\\sqrt{d_k}}$", "$e^{i\\pi}+1=0$", "$\\mathrm{softmax}(x)_i=\\frac{e^{x_i}}{\\sum_j e^{x_j}}$"; the sidebar typesets it. Never write bare x_k or 1/√d outside dollars. If existing names, summaries or hooks show formulas without dollar signs (like 1/√d_k), rewrite those nodes through techtree_plan with the same ids. When techtree_view lists nodes marked no-hook, add hooks by calling techtree_plan again with those same nodes (same ids and prerequisites, plus hook).
+Writing node text: the summary is one or two plain sentences that someone who has learned only this node's prerequisites can follow — what the idea is in everyday words or with a tiny concrete example, and in plain words why the goal needs it, without symbols that later nodes introduce. Every symbol in the node's name, summary or hook gets a glossary entry: the symbol as LaTeX in $…$ and its meaning in plain words, with a typical value when it helps (term "$d_k$", meaning "每个查询/键向量里有多少个数（维度），常见是 64").
 
-Skip-ahead challenge: when the learner asks to skip ahead to a locked node, give one or two integrated questions that can only be solved by also knowing its key prerequisites. If they succeed, light the node and every prerequisite the answers clearly demonstrated (techtree_record per node, citing the answer as evidence); if not, say which prerequisite is missing and start there.
+Math notation: in node names, summaries, hooks and replies write every formula as LaTeX between dollar signs ($…$ inline, $$…$$ on its own line). Never write bare x_k or 1/√d outside dollars. When techtree_view marks nodes no-hook, plain-math or no-glossary, fix them by calling techtree_plan again with the same ids and prerequisites.
 
-Writing for the learner: the summary is one or two plain sentences that someone who has learned only this node's prerequisites can follow. Say what the idea is in everyday words or with a tiny concrete example; when you say why the goal needs it, describe that later use in plain words, without symbols that later nodes introduce (not "理解缩放因子 1/√d_k 需要……" but "后面要回答'很多个随机数加起来，结果会大到什么程度'，这里学的方差就是答案"). Every symbol that appears in the node's name, summary or hook gets a glossary entry: the symbol as LaTeX in $…$ and its meaning in plain words with a typical value when one helps (e.g. term "$d_k$", meaning "每个查询/键向量里有多少个数（维度），常见是 64"). When techtree_view marks nodes plain-math or no-glossary, or a summary would confuse a learner at that point, rewrite those nodes through techtree_plan with the same ids.
+## Teaching
+Teach in small steps. Each reply covers one idea and ends with exactly one question for the learner; then stop and wait for their answer.
+- Starting a node: open with its hook, build intuition with a concrete example, then give the precise statement. Mention the classic pitfall when there is one.
+- Check questions must make the learner produce something: explain in their own words, compute a small case, predict what happens, give an example or counterexample, or say why a step is needed. No yes/no questions, no questions that hint at their own answer, and never reveal the answer in the same reply.
+- Grading an answer: compare it with the key points. Say precisely what is right and what is missing or wrong. Never call a wrong or incomplete answer correct, and do not pad with praise. If it is partly right, ask a follow-up aimed at the missing part.
+- If the learner is stuck: first a small hint, then a bigger hint, then a worked example of a similar problem — and after that ask a fresh parallel question so they still produce the answer themselves.
+- Accuracy matters more than speed: check every formula, number and example before sending it; prefer standard definitions; if you are unsure of a fact, say so instead of guessing.
+- Skip-ahead challenge: when the learner asks to skip ahead to a locked node, give one or two integrated questions that can only be solved by also knowing its key prerequisites. If they succeed, light the node and each prerequisite the answers clearly demonstrated; if not, say which prerequisite is missing and start there.
+- Review: when a point needs review, ask a NEW question about it (not the one from last time), then record the result.
 
-Teaching a node: open with its hook, then intuition, then the precise statement, an example, common pitfalls, and one practice question. Prefer Socratic questions over lecturing.
+## Exercises and study material
+When the learner shares an exercise, their own working, or study material (pasted text, an image or a file):
+- An exercise or exam question: do not hand over the full solution. Find which knowledge points it needs (planning or extending the tree if useful), then guide the learner to solve it step by step with questions.
+- Their own answer or working: grade it like any answer — exactly what is right, what is wrong and why — then follow up.
+- Notes, slides or a textbook chapter: when they want to learn it, plan the tree from that material, using its terms and order.
 
-Lighting a node: call techtree_record with level >= 1 ONLY after the learner has demonstrated understanding in this conversation — explaining it in their own words (Feynman check) or answering a check question correctly. Never light a node because the learner merely says they know it; quiz them first. Levels: 1 bronze = can state and explain it; 2 silver = explains why it holds or how it connects to its prerequisites; 3 gold = applies it correctly to a new problem. When an answer reveals a gap, call techtree_record on the prerequisite at fault with weak=true (keep its level) and repair that gap first.
+## Lighting a node (techtree_record)
+- Only after the learner has answered in their own words in this conversation. Messages sent from the sidebar buttons are requests, not answers: ask first and record after their reply.
+- One step per answer: a node rises at most one level per learner reply (the plugin rejects bigger jumps, and a second raise of the same node within a minute). Levels: 1 bronze = states and explains it correctly in their own words; 2 silver = explains why it holds or how it follows from its prerequisites; 3 gold = applies it correctly to a new problem they have not seen.
+- Never light a node because the learner says they already know it — quiz them first.
+- evidence: quote or closely paraphrase what the learner actually said or did.
+- When an answer reveals a gap, record the prerequisite at fault with weak=true (keeping its level) and repair that gap before moving on.
 
 Use techtree_view to read current progress, including review needs, before choosing what to teach next. Reply in the learner's language.`
 
@@ -72,16 +96,22 @@ export function apply(ctx, config = {}) {
   })
   ready.then(handle => { projection = handle }, error => ctx.logger?.warn?.('techtree projection unavailable', error))
 
-  /** Goals this session's tree already shows, from its own log. */
-  const sessionGoals = exec => {
+  /** Goals this session's tree already shows, from its own log; ids merged away since then point to their new node. */
+  const sessionGoals = (exec, current) => {
     const session = exec?.agent?.session
     if (projection === undefined || session === undefined) return []
+    let goals
     try {
-      return projection.stateOf(session)?.goals ?? []
+      goals = projection.stateOf(session)?.goals ?? []
     } catch {
       return []
     }
+    if (!current?.mergedInto) return goals
+    const resolve = id => { let x = id; for (let i = 0; i < 20 && current.mergedInto[x]; i++) x = current.mergedInto[x]; return x }
+    return goals.map(g => ({ ...g, id: resolve(g.id) })).filter((g, i, all) => all.findIndex(x => x.id === g.id) === i)
   }
+  /** Recent level raises, for the one-step-per-check rule. */
+  let recentRaises = []
 
   // Optional: the web/desktop connection serves an authenticated GET under /api.
   // Absent in headless runs, so it is injected on demand rather than required.
@@ -104,7 +134,7 @@ export function apply(ctx, config = {}) {
 
   register({
     name: 'techtree_plan',
-    description: 'Create or extend the learner\'s knowledge talent tree for a learning goal. Give the goal node and every knowledge point needed to understand it, each with its direct prerequisites (ids). Nodes merge into the learner\'s personal map: matching ids or names reuse existing nodes and keep their mastery.',
+    description: 'Create or extend the learner\'s knowledge talent tree for a learning goal. Give the goal node and every knowledge point needed to understand it, each with its direct prerequisites (ids). Nodes merge into the learner\'s personal map: reuse the id of any point already in the map that is the same knowledge (list them with techtree_view map=true); matching ids or identical names are reused automatically and keep their mastery.',
     parameters: {
       type: 'object',
       properties: {
@@ -149,13 +179,17 @@ export function apply(ctx, config = {}) {
         outcome = mergePlan(current, plan)
         return rememberGoal(outcome.store, outcome.goal, Date.now())
       })
-      const goals = upsertGoal(sessionGoals(exec), outcome.goal)
+      const goals = upsertGoal(sessionGoals(exec, next), outcome.goal)
       const snapshot = buildSnapshot(next, goals, Date.now())
       const notes = []
       const remaps = Object.entries(outcome.remapped)
       if (remaps.length) notes.push(`Merged into existing nodes (use these ids from now on): ${remaps.map(([a, b]) => `${a} -> ${b}`).join(', ')}`)
       const known = snapshot.nodes.filter(n => n.mastery >= 1).map(n => n.name)
       if (known.length) notes.push(`Already lit from earlier study: ${known.join(', ')}`)
+      const dupes = likelyDuplicates(next, outcome.added)
+      if (dupes.length) {
+        notes.push(`Possible duplicates of points already in the map (new -> existing). If a pair is the same knowledge, call techtree_merge with from_id = the new id and into_id = the existing id; if not, ignore it:\n${dupes.map(d => `- ${d.id} "${d.name}" -> ${d.existingId} "${d.existingName}"`).join('\n')}`)
+      }
       return { text: [`Planned "${outcome.goal.name}": ${outcome.added.length} new, ${outcome.merged.length} reused.`, ...notes, describeSnapshot(snapshot, Date.now())].join('\n'), snapshot }
     },
   })
@@ -175,9 +209,28 @@ export function apply(ctx, config = {}) {
     },
     async execute(args, exec) {
       const now = Date.now()
-      const next = await store.update(current => recordMastery(current, args, now))
+      let raised = false
+      const next = await store.update(current => {
+        const target = current.nodes[args?.node_id]
+        const before = target?.mastery ?? 0
+        if (target && Number.isInteger(args.level) && args.level > before) {
+          if (args.level > before + 1) {
+            throw new Error(`a node rises at most one level per answer ("${target.name}" is at ${before}); record level ${before + 1} now and check the next level with a new question`)
+          }
+          recentRaises = recentRaises.filter(r => now - r.at < RAISE_WINDOW_MS)
+          if (recentRaises.some(r => r.id === target.id)) {
+            throw new Error(`"${target.name}" just went up a level; ask a new question and wait for the learner's answer before raising it again`)
+          }
+          if (recentRaises.length >= MAX_RAISES_PER_WINDOW) {
+            throw new Error(`at most ${MAX_RAISES_PER_WINDOW} nodes can be raised from one answer; check the rest with further questions`)
+          }
+          raised = true
+        }
+        return recordMastery(current, args, now)
+      })
       const node = next.nodes[args.node_id]
-      let goals = sessionGoals(exec)
+      if (raised) recentRaises.push({ id: node.id, at: now })
+      let goals = sessionGoals(exec, next)
       if (goals.length === 0) goals = [{ id: node.id, name: node.name }]
       const snapshot = buildSnapshot(next, goals, now)
       const verb = args.level >= 1 ? `Lit "${node.name}" at level ${args.level}` : `Set "${node.name}" to unlit`
@@ -186,17 +239,52 @@ export function apply(ctx, config = {}) {
   })
 
   register({
+    name: 'techtree_merge',
+    description: 'Merge two knowledge points that are the same knowledge under different names, so the learner learns it once. The learner keeps the better mastery; every tree, prerequisite and goal that used from_id now uses into_id. Use it for duplicates reported by techtree_plan or spotted with techtree_view map=true. Never merge points that are merely related.',
+    parameters: {
+      type: 'object',
+      properties: {
+        from_id: { type: 'string', description: 'Id of the duplicate to remove (usually the newer one).' },
+        into_id: { type: 'string', description: 'Id of the point to keep (usually the existing one).' },
+        reason: { type: 'string', description: 'Why these are the same knowledge.' },
+      },
+      required: ['from_id', 'into_id', 'reason'],
+    },
+    async execute(args, exec) {
+      let from
+      const next = await store.update(current => {
+        from = current.nodes[args?.from_id]
+        const merged = mergeNodes(current, args?.from_id, args?.into_id)
+        // Remember the move so goals saved in other conversations still resolve.
+        return { ...merged, mergedInto: { ...(current.mergedInto ?? {}), [args.from_id]: args.into_id } }
+      })
+      const kept = next.nodes[args.into_id]
+      const goals = sessionGoals(exec, next)
+      const now = Date.now()
+      const snapshot = goals.length ? buildSnapshot(next, goals, now) : null
+      const text = [`Merged "${from.name}" (${from.id}) into "${kept.name}" (${kept.id}); mastery is now ${kept.mastery ?? 0}. Use ${kept.id} from now on.`,
+        snapshot ? describeSnapshot(snapshot, now) : ''].filter(Boolean).join('\n')
+      return { text, snapshot }
+    },
+  })
+
+  register({
     name: 'techtree_view',
-    description: 'Show the current talent tree for this conversation: every node with its state (lit level, learnable, locked, weak, fading/needs review). Pass goal_id to bring an existing goal from the learner\'s map into this conversation.',
+    description: 'Show the current talent tree for this conversation: every node with its state (lit level, learnable, locked, weak, fading/needs review). Pass goal_id to bring an existing goal from the learner\'s map into this conversation; pass map=true to also list every point the learner has (do this before planning a new goal).',
     parameters: {
       type: 'object',
       properties: {
         goal_id: { type: 'string', description: 'Optional id of an existing node to show as a goal.' },
+        map: { type: 'boolean', description: 'Also list every point in the learner\'s knowledge map (id, name, mastery). Call this before planning a new goal, to reuse existing points.' },
       },
     },
     async execute(args, exec) {
       const current = await store.read()
-      let goals = sessionGoals(exec)
+      let goals = sessionGoals(exec, current)
+      const digest = args?.map === true ? mapDigest(current) : ''
+      const mapText = args?.map === true
+        ? `The learner's knowledge map, as "id · name · mastery 0-3" (w = weak). Reuse these ids for the same knowledge:\n${digest || '(empty: nothing planned yet)'}`
+        : ''
       if (typeof args?.goal_id === 'string') {
         const node = current.nodes[args.goal_id]
         if (node === undefined) throw new Error(`unknown node "${args.goal_id}"`)
@@ -207,11 +295,11 @@ export function apply(ctx, config = {}) {
         const text = all.length === 0
           ? 'This conversation has no talent tree yet and the learner\'s map is empty. Use techtree_plan.'
           : `This conversation has no talent tree yet. The learner's map has ${all.length} nodes (${all.filter(n => n.mastery >= 1).length} lit). Pass goal_id to show one, or use techtree_plan.`
-        return { text, snapshot: null }
+        return { text: [text, mapText].filter(Boolean).join('\n\n'), snapshot: null }
       }
       const now = Date.now()
       const snapshot = buildSnapshot(current, goals, now)
-      return { text: describeSnapshot(snapshot, now), snapshot }
+      return { text: [describeSnapshot(snapshot, now), mapText].filter(Boolean).join('\n\n'), snapshot }
     },
   })
 }

@@ -95,7 +95,7 @@ window.__ModuleLoader__.load({
       'action.recommend': '定位推荐',
       'action.export': '导出图片',
       'detail.route': '学习路线 · {n} 步',
-      'prompt.route': '我想学会「{name}」（{id}）。请按这个顺序一个个带我学：{route}。从第一个开始，每个先抛出它的钩子问题，学完一个就用 techtree_record 记录，再进入下一个。',
+      'prompt.route': '我想学会「{name}」（{id}）。请按这个顺序一个个带我学：{route}。从第一个开始，每个先抛出它的钩子问题，每个都要等我答对检验题后再用 techtree_record 记录，然后进入下一个。',
       'prompt.skip': '我想跳级挑战「{name}」（{id}）：我觉得不用按顺序学前置也能掌握它。请出一两道能同时检验它和关键前置的综合题考我；我答对了就点亮它和你确认我已经会的前置，答错就告诉我缺哪块，从那里开始学。',
       'toast.lit': '点亮「{name}」· {level}',
       'toast.unlocked': '解锁了 {n} 个新知识点：{names}',
@@ -112,6 +112,15 @@ window.__ModuleLoader__.load({
       'review.short': '待复习 {n}',
       'prompt.reviewBatch': '今天要复习这 {n} 个知识点：{list}。请一个一个来：先抛出它的钩子，再出一道题考我；等我回答后用 techtree_record 更新（答得好就刷新复习时间、去掉需加固标记，答得不好就降一级或标记需加固并当场补上），然后进入下一个。全部结束后告诉我今天的复习结果。',
       'chip.open': '打开天赋树',
+      'legend.title': '图例',
+      'detail.evidence': '点亮依据',
+      'detail.alsoIn': '也出现在',
+      'merge.open': '和别的知识点重复了？',
+      'prompt.merge': '「{name}」（{id}）好像和我知识地图里的另一个知识点是同一个知识。请先用 techtree_view（map=true）看我的整张知识地图，找出和它重复的点，跟我确认后再用 techtree_merge 合并，掌握程度保留较高的。',
+      'map.title': '知识地图',
+      'map.meta': '{points} 个知识点 · {shared} 个被多个目标共用',
+      'map.sharedBy': '被 {n} 个目标共用',
+      'map.hint': '所有目标画在一张图上，🔗 标的是被几个目标共用的知识点：学一遍，几棵树一起点亮。',
       'legend.lit': '已点亮',
       'legend.available': '可以学',
       'legend.locked': '未解锁',
@@ -183,7 +192,7 @@ window.__ModuleLoader__.load({
       'action.recommend': 'Show recommended',
       'action.export': 'Export image',
       'detail.route': 'Route · {n} steps',
-      'prompt.route': 'I want to learn "{name}" ({id}). Teach me in this order: {route}. Start with the first; open each with its hook question, record it with techtree_record when done, then move on.',
+      'prompt.route': 'I want to learn "{name}" ({id}). Teach me in this order: {route}. Start with the first; open each with its hook question, record each with techtree_record only after I answer its check question correctly, then move on.',
       'prompt.skip': 'Skip-ahead challenge for "{name}" ({id}): I think I can handle it without studying the prerequisites in order. Give me one or two integrated questions that test it and its key prerequisites; if I get them right, light it and the prerequisites you are sure I know; if not, tell me what is missing and start there.',
       'toast.lit': 'Lit "{name}" · {level}',
       'toast.unlocked': '{n} new points unlocked: {names}',
@@ -200,6 +209,15 @@ window.__ModuleLoader__.load({
       'review.short': '{n} due',
       'prompt.reviewBatch': 'Today I need to review these {n} points: {list}. Go one at a time: open with its hook, then quiz me; after my answer update it with techtree_record (good answer: refresh the review time and clear the needs-work flag; weak answer: drop a level or mark it weak and fix the gap right away), then move on. Summarise today\'s review at the end.',
       'chip.open': 'Open talent tree',
+      'legend.title': 'Legend',
+      'detail.evidence': 'Why it is lit',
+      'detail.alsoIn': 'Also in',
+      'merge.open': 'Duplicate of another point?',
+      'prompt.merge': '"{name}" ({id}) seems to be the same knowledge as another point in my knowledge map. First look at my whole map with techtree_view (map=true), find the duplicate, confirm it with me, then merge them with techtree_merge, keeping the higher mastery.',
+      'map.title': 'Knowledge map',
+      'map.meta': '{points} points · {shared} shared by several goals',
+      'map.sharedBy': 'Used by {n} goals',
+      'map.hint': 'Every goal on one canvas. 🔗 marks points that several goals share: learn once, light up every tree.',
       'legend.lit': 'Lit',
       'legend.available': 'Learnable',
       'legend.locked': 'Locked',
@@ -237,7 +255,7 @@ window.__ModuleLoader__.load({
 .tt-goal{font-size:16px;font-weight:700;letter-spacing:.2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tt-meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:2px;color:var(--tt-fg2);font-size:12px}
 .tt-medals{display:inline-flex;gap:6px}
-.tt-medal{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums}
+.tt-medal{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tt-medal i{width:9px;height:9px;border-radius:50%;display:inline-block}
 .tt-stage{position:relative;flex:1;min-height:300px;border-radius:16px;border:1px solid var(--tt-line-soft);overflow:hidden;background:color-mix(in srgb,var(--tt-bg2) 70%,var(--tt-bg))}
 .tt-viewport{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none;outline:none;background-image:radial-gradient(circle,color-mix(in srgb,var(--tt-fg3) 32%,transparent) 1px,transparent 1.4px)}
@@ -429,6 +447,34 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
 .tt-lib-name{display:flex;align-items:center;justify-content:space-between;gap:6px}
 .tt-lib-name>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){.tt-review{animation:none}}
+.tt-card{max-height:64%;overflow-y:auto;overscroll-behavior:contain;transition:transform .22s cubic-bezier(.2,.8,.3,1),max-height .22s ease;touch-action:pan-y}
+.tt-card.tt-card-dragging{transition:none}
+.tt-card.tt-card-expanded{max-height:86%}
+.tt-card-grip{display:flex;justify-content:center;margin:-8px -14px 2px;padding:6px 0 4px;cursor:grab;touch-action:none}
+.tt-card-grip i{width:38px;height:5px;border-radius:3px;background:var(--tt-line)}
+.tt-card-head{touch-action:none}
+.tt-card .tt-actions{position:sticky;bottom:-12px;margin:10px -14px -12px;padding:10px 14px 12px;background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--tt-bg) 96%,transparent) 12px)}
+.tt-medals{white-space:nowrap}
+.tt-overlay.tt-legend-toggle{left:10px;top:10px;pointer-events:auto;gap:5px;height:28px;padding:0 10px 0 6px;border-radius:999px;border:1px solid var(--tt-line-soft);background:color-mix(in srgb,var(--tt-bg) 92%,transparent);backdrop-filter:blur(6px);font:inherit;font-size:12px;color:var(--tt-fg2);cursor:pointer}
+.tt-legend-toggle i{display:grid;place-items:center;width:17px;height:17px;border-radius:50%;background:var(--tt-fg3);color:var(--tt-bg);font-style:normal;font-size:11px;font-weight:800;font-family:Georgia,serif}
+.tt-overlay.tt-legend-open{pointer-events:auto;padding:8px;border-radius:14px;border:1px solid var(--tt-line-soft);background:color-mix(in srgb,var(--tt-bg) 95%,transparent);backdrop-filter:blur(8px);box-shadow:0 8px 22px -12px rgba(0,0,0,.3);cursor:pointer}
+.tt-goal-node .tt-node-text{padding-right:18px}
+.tt-shared{position:absolute;bottom:-9px;left:12px;display:inline-flex;align-items:center;gap:2px;padding:0 7px 0 5px;border-radius:999px;font-size:10.5px;font-weight:800;line-height:18px;color:#5b3a00;background:linear-gradient(135deg,#fff1c2,#f6c94b);border:1px solid #e5b324;box-shadow:0 2px 6px -2px rgba(214,158,18,.6)}
+.tt-evidence{margin-top:8px;padding:8px 10px;border-radius:10px;background:var(--tt-bg2);font-size:12.5px;line-height:1.5;color:var(--tt-fg2)}
+.tt-evidence b{color:var(--tt-fg);font-weight:650}
+.tt-also .tt-link-goal{display:inline-flex;align-items:center;gap:4px;border-color:color-mix(in srgb,#eeb031 45%,transparent);background:color-mix(in srgb,#eeb031 10%,var(--tt-bg))}
+.tt-also .tt-link-goal svg{width:12px;height:12px;color:#c48a12}
+span.tt-link-goal{cursor:default}
+.tt-merge-link{display:block;margin-top:4px;padding:4px 0;border:none;background:none;font:inherit;font-size:12.5px;color:var(--tt-fg3);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.tt-merge-link:hover{color:var(--tt-fg2)}
+.tt-lib-item{flex-direction:row;align-items:center;gap:10px}
+.tt-lib-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.tt-lib-thumb{flex:none;display:grid;place-items:center;width:64px;height:46px;border-radius:9px;background:var(--tt-bg2);--tt-thumb-line:color-mix(in srgb,var(--tt-fg3) 45%,transparent);--tt-thumb-locked:color-mix(in srgb,var(--tt-fg3) 30%,var(--tt-bg));--tt-thumb-avail:color-mix(in srgb,var(--tt-brand) 18%,var(--tt-bg));--tt-thumb-avail-line:var(--tt-brand)}
+.tt-thumb{display:block}
+.tt-lib-map{border:1px dashed color-mix(in srgb,#eeb031 60%,transparent);background:color-mix(in srgb,#eeb031 7%,var(--tt-bg))}
+.tt-lib-map .tt-lib-thumb{font-size:22px}
+.tt-lib-map[aria-current="true"]{border-style:solid;border-color:color-mix(in srgb,#eeb031 70%,transparent);background:color-mix(in srgb,#eeb031 13%,var(--tt-bg))}
+.tt-map-hint{font-size:12px;color:var(--tt-fg2)}
 `
 
     function Style() {
@@ -1097,6 +1143,24 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
       return value
     }
 
+    /** Which goals in the cached map use each point. */
+    function goalsByNode(entries) {
+      const out = {}
+      entries.forEach(e => e.nodes.forEach(n => { (out[n.id] = out[n.id] || []).push(e.goal) }))
+      return out
+    }
+
+    /** Every goal's points on one canvas; the most recently synced copy of a point wins. */
+    function mapNodes(entries) {
+      const seen = new Map()
+      entries.slice().sort((a, b) => b.at - a.at).forEach(e => e.nodes.forEach(n => { if (!seen.has(n.id)) seen.set(n.id, n) }))
+      return [...seen.values()]
+    }
+
+    function mergePrompt(t, node) {
+      return fill(t('prompt.merge'), { name: richToPlain(node.name), id: node.id })
+    }
+
     // ---- components ---------------------------------------------------------
 
     function send(inputActions, text) {
@@ -1167,7 +1231,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
      * automatic fit zooms in on when the whole tree would be too small to read.
      * `children` may be a function of the current view.
      */
-    function Viewport({ t, width, height, fitKey, focus, camera, children, overlay, tools }) {
+    function Viewport({ t, width, height, fitKey, focus, camera, children, overlay, tools, onBlankTap }) {
       const ref = useRef(null)
       const [view, setView] = useState({ x: 24, y: 24, k: 1 })
       const [dragging, setDragging] = useState(false)
@@ -1196,9 +1260,10 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
         const el = ref.current
         if (!el || !el.clientWidth || !el.clientHeight) return null
         // Room for the legend / zoom bar above and the hint below.
+        // Phones keep room for the floating "continue" button at the bottom.
         const padX = 28
         const padTop = 92
-        const padBottom = 40
+        const padBottom = el.clientWidth < 520 ? 88 : 40
         const k = clamp(Math.min((el.clientWidth - padX * 2) / width, (el.clientHeight - padTop - padBottom) / height, 1), MIN_ZOOM, 1)
         return { k, x: (el.clientWidth - width * k) / 2, y: Math.max(padTop, padTop + (el.clientHeight - padTop - padBottom - height * k) / 2) }
       }, [width, height])
@@ -1233,21 +1298,33 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
         const v = fitView()
         if (!v) return
         const f = focusRef.current
-        if (smart && f && v.k < 0.62) {
-          const el = ref.current
-          put({ k: 0.9, x: el.clientWidth / 2 - f.x * 0.9, y: el.clientHeight * 0.42 - f.y * 0.9 })
+        const el = ref.current
+        // On a phone, a whole tree squeezed into the screen is too small to read:
+        // open at normal size on the recommended point instead (the fit button shows everything).
+        const narrow = el.clientWidth < 520
+        const readable = narrow ? 0.88 : 0.62
+        if (smart && f && v.k < readable) {
+          const k = narrow ? 1 : 0.9
+          put({ k, x: el.clientWidth / 2 - f.x * k, y: el.clientHeight * 0.4 - f.y * k })
         } else put(v)
       }, [fitView, put])
 
-      /** Bring a canvas point into the upper part of the view (above the detail card) when it is not already there. */
-      const reveal = (cx, cy) => {
+      /**
+       * Make sure a node centred on canvas point (cx, cy) is fully visible in the part of
+       * the view that `bottomInset` pixels of detail card leave free; fly there if not.
+       */
+      const reveal = (cx, cy, bottomInset) => {
         const el = ref.current
         if (!el || !el.clientWidth) return
         const v = viewRef.current
+        const top = 52
+        const bottom = el.clientHeight - (bottomInset || 0) - 14
+        const k = el.clientWidth < 520 ? Math.max(v.k, 0.85) : v.k
         const sx = cx * v.k + v.x
         const sy = cy * v.k + v.y
-        if (sx > 40 && sx < el.clientWidth - 40 && sy > 70 && sy < el.clientHeight * 0.42) return
-        flyTo(cx, cy, { k: v.k, anchorY: 0.28 })
+        const half = (NODE_H / 2 + 26) * v.k
+        if (k === v.k && sx > 30 && sx < el.clientWidth - 30 && sy - half > top && sy + half < bottom) return
+        flyTo(cx, cy, { k, anchorY: clamp((top + bottom) / 2 / el.clientHeight, 0.12, 0.6) })
       }
       if (camera) camera.current = { flyTo, reveal, fit: () => { touched.current = false; stop(); fit(false) } }
 
@@ -1343,6 +1420,9 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
         event.stopPropagation()
         event.preventDefault()
       }
+      const onClick = event => {
+        if (onBlankTap && !(event.target.closest && event.target.closest('.tt-node, .tt-overlay, .tt-card'))) onBlankTap()
+      }
       const onDoubleClick = event => {
         if (event.target.closest && event.target.closest('.tt-node, .tt-overlay, .tt-card')) return
         touched.current = false
@@ -1368,7 +1448,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
           ref, tabIndex: 0, className: 'tt-viewport' + (dragging ? ' tt-dragging' : ''),
           style: { backgroundSize: `${grid}px ${grid}px`, backgroundPosition: `${view.x}px ${view.y}px` },
           onPointerDown, onPointerMove, onPointerUp: endDrag, onPointerCancel: endDrag,
-          onClickCapture, onDoubleClick, onKeyDown,
+          onClickCapture, onClick, onDoubleClick, onKeyDown,
         },
         h('div', { className: 'tt-canvas', style: { width, height, transform: `translate(${view.x}px, ${view.y}px) scale(${view.k})` } },
           typeof children === 'function' ? children(view) : children)),
@@ -1407,7 +1487,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
     const SPARKS = [0, 45, 90, 135, 180, 225, 270, 315]
 
     /** Nodes and edges of one tree, plus the hook bubble, in canvas coordinates. */
-    function Graph({ t, nodes, goalIds, selected, hover, onSelect, onHover, now, coords, routeSteps, recommended, celebrate, view }) {
+    function Graph({ t, nodes, goalIds, selected, hover, onSelect, onHover, now, coords, routeSteps, recommended, celebrate, view, shared }) {
       const byId = Object.fromEntries(nodes.map(n => [n.id, n]))
       const focus = selected && byId[selected] ? related(nodes, selected) : null
       const width = Math.max(...nodes.map(n => coords[n.id].x + NODE_W), NODE_W)
@@ -1469,6 +1549,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
             onPointerLeave: () => onHover(null),
           },
           isGoal ? h('span', { className: 'tt-goal-tag' }, t('flag.goal')) : null,
+          shared && shared[n.id] > 1 ? h('span', { className: 'tt-shared', title: fill(t('map.sharedBy'), { n: shared[n.id] }) }, '🔗', shared[n.id]) : null,
           onRoute(n.id) ? h('span', { className: 'tt-step' }, routeSteps[n.id] + 1) : null,
           recommended === n.id ? h('span', { className: 'tt-rec' }, h('i', null, '▼'), t('flag.recommended')) : null,
           h(Badge, { state, node: n, isGoal }),
@@ -1489,7 +1570,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
             h('span', null, h(Rich, { text: g.meaning }))))) : null) : null)
     }
 
-    function Detail({ t, node, nodes, onJump, onClose, act, now, routeIds }) {
+    function Detail({ t, node, nodes, onJump, onClose, act, now, routeIds, alsoIn, onOpenGoal, onMerge }) {
       const byId = Object.fromEntries(nodes.map(n => [n.id, n]))
       const state = stateOf(node, byId)
       const unlocks = nodes.filter(n => n.prerequisites.includes(node.id))
@@ -1507,21 +1588,52 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
         h('span', null, `${label}：`),
         list.length ? list.map(chip) : h('span', null, t('detail.none')))
       const vars = { name: richToPlain(node.name), id: node.id }
+      const actOn = text => act(text, node)
       const route = routeIds.map(id => byId[id]).filter(Boolean)
       const routeText = route.map((n, i) => `${i + 1}. ${richToPlain(n.name)}（${n.id}）`).join(' → ')
       const actions = []
       if (state === 'locked') {
-        actions.push(h('button', { key: 'route', type: 'button', className: 'tt-btn tt-btn-primary', onClick: () => act(fill(t('prompt.route'), { ...vars, route: routeText })) }, t('action.route')))
-        actions.push(h('button', { key: 'skip', type: 'button', className: 'tt-btn tt-btn-skip', onClick: () => act(fill(t('prompt.skip'), vars)) }, h(BoltIcon), t('action.skip')))
+        actions.push(h('button', { key: 'route', type: 'button', className: 'tt-btn tt-btn-primary', onClick: () => actOn(fill(t('prompt.route'), { ...vars, route: routeText })) }, t('action.route')))
+        actions.push(h('button', { key: 'skip', type: 'button', className: 'tt-btn tt-btn-skip', onClick: () => actOn(fill(t('prompt.skip'), vars)) }, h(BoltIcon), t('action.skip')))
       } else if (state === 'available') {
-        actions.push(h('button', { key: 'learn', type: 'button', className: 'tt-btn tt-btn-primary', onClick: () => act(fill(t('prompt.learn'), vars)) }, t('action.learn')))
-        actions.push(h('button', { key: 'check', type: 'button', className: 'tt-btn', onClick: () => act(fill(t('prompt.check'), vars)) }, t('action.check')))
+        actions.push(h('button', { key: 'learn', type: 'button', className: 'tt-btn tt-btn-primary', onClick: () => actOn(fill(t('prompt.learn'), vars)) }, t('action.learn')))
+        actions.push(h('button', { key: 'check', type: 'button', className: 'tt-btn', onClick: () => actOn(fill(t('prompt.check'), vars)) }, t('action.check')))
       } else {
-        actions.push(h('button', { key: 'review', type: 'button', className: 'tt-btn tt-btn-primary', onClick: () => act(fill(t('prompt.review'), vars)) }, t('action.review')))
-        if (node.mastery < 3) actions.push(h('button', { key: 'check', type: 'button', className: 'tt-btn', onClick: () => act(fill(t('prompt.check'), vars)) }, t('action.levelUp')))
+        actions.push(h('button', { key: 'review', type: 'button', className: 'tt-btn tt-btn-primary', onClick: () => actOn(fill(t('prompt.review'), vars)) }, t('action.review')))
+        if (node.mastery < 3) actions.push(h('button', { key: 'check', type: 'button', className: 'tt-btn', onClick: () => actOn(fill(t('prompt.check'), vars)) }, t('action.levelUp')))
       }
-      return h('div', { className: 'tt-card', role: 'dialog', 'aria-label': node.name },
-        h('div', { className: 'tt-card-head' },
+      // Drag the grip or title: down to close, up to give the card more room.
+      const [expanded, setExpanded] = useState(false)
+      const [dy, setDy] = useState(0)
+      const dragStart = useRef(null)
+      const grab = {
+        onPointerDown: event => {
+          if (event.target.closest && event.target.closest('button')) return
+          dragStart.current = { y: event.clientY, id: event.pointerId }
+          try { event.currentTarget.setPointerCapture(event.pointerId) } catch {}
+        },
+        onPointerMove: event => {
+          if (!dragStart.current || dragStart.current.id !== event.pointerId) return
+          setDy(event.clientY - dragStart.current.y)
+        },
+        onPointerUp: event => {
+          if (!dragStart.current || dragStart.current.id !== event.pointerId) return
+          const moved = event.clientY - dragStart.current.y
+          dragStart.current = null
+          setDy(0)
+          if (moved > 70) onClose()
+          else if (moved < -40) setExpanded(true)
+          else if (moved > 30 && expanded) setExpanded(false)
+        },
+      }
+      grab.onPointerCancel = () => { dragStart.current = null; setDy(0) }
+      return h('div', {
+        className: 'tt-card' + (expanded ? ' tt-card-expanded' : '') + (dy ? ' tt-card-dragging' : ''),
+        role: 'dialog', 'aria-label': node.name,
+        style: dy ? { transform: `translateY(${Math.max(dy, -60)}px)` } : undefined,
+      },
+        h('div', { className: 'tt-card-grip', ...grab, 'aria-hidden': true }, h('i')),
+        h('div', { className: 'tt-card-head', ...grab },
           h(Badge, { state, node, isGoal: false }),
           h('div', { className: 'tt-card-title' }, h(Rich, { text: node.name })),
           h('button', { type: 'button', className: 'tt-icon-btn', title: t('detail.close'), 'aria-label': t('detail.close'), onClick: onClose }, h(CloseIcon))),
@@ -1538,6 +1650,13 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
           h('div', { className: 'tt-route-list' }, route.map((n, i) => h('button', { key: n.id, type: 'button', className: 'tt-route-step', onClick: () => onJump(n.id) }, h('b', null, i + 1), h(Rich, { text: n.name }))))) : null,
         links(t('detail.prereqs'), node.prerequisites.map(id => byId[id]).filter(Boolean)),
         links(t('detail.unlocks'), unlocks),
+        node.mastery >= 1 && node.evidence ? h('div', { className: 'tt-evidence' }, h('b', null, `${t('detail.evidence')}：`), h(Rich, { text: node.evidence })) : null,
+        alsoIn && alsoIn.length ? h('div', { className: 'tt-links tt-also' },
+          h('span', null, `${t('detail.alsoIn')}：`),
+          alsoIn.map(g => onOpenGoal
+            ? h('button', { key: g.id, type: 'button', className: 'tt-link tt-link-goal', onClick: () => onOpenGoal(g) }, h(FlagIcon), h(Rich, { text: g.name }))
+            : h('span', { key: g.id, className: 'tt-link tt-link-goal' }, h(FlagIcon), h(Rich, { text: g.name })))) : null,
+        onMerge ? h('button', { type: 'button', className: 'tt-merge-link', onClick: () => onMerge(node) }, t('merge.open')) : null,
         h('div', { className: 'tt-actions' }, actions))
     }
 
@@ -1576,10 +1695,12 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
     }
 
     /** Tree canvas with legend, tools, the selected node's card and toasts. */
-    function Stage({ t, title, nodes, goalIds, act, fitKey }) {
+    function Stage({ t, title, nodes, goalIds, act, fitKey, alsoInOf, onOpenGoal, onMerge, fab, camera: cameraOut, shared, overview }) {
       const [selected, setSelected] = useState(null)
       const [hover, setHover] = useState(null)
       const camera = useRef(null)
+      const stageRef = useRef(null)
+      const [legendOpen, setLegendOpen] = useState(false)
       const now = Date.now()
       const byId = useMemo(() => Object.fromEntries(nodes.map(n => [n.id, n])), [nodes])
       const { coords, width, height } = useMemo(() => layout(nodes), [nodes])
@@ -1589,19 +1710,18 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
       const routeSteps = routeIds.length > 1 ? Object.fromEntries(routeIds.map((id, i) => [id, i])) : null
       const { celebrate, toasts, notify } = useCelebrations(t, nodes, camera, coords)
       const center = id => ({ x: coords[id].x + NODE_W / 2, y: coords[id].y + NODE_H / 2 })
-      const jump = id => {
-        setSelected(id)
+      // Once the card for a newly selected node is laid out, keep the node visible above it.
+      const revealSelected = useRef(null)
+      useEffect(() => {
+        const id = revealSelected.current
+        revealSelected.current = null
+        if (!id || !coords[id] || !camera.current) return
+        const card = stageRef.current && stageRef.current.querySelector('.tt-card')
         const c = center(id)
-        // Keep the node above the detail card.
-        if (camera.current) camera.current.flyTo(c.x, c.y, { anchorY: 0.3 })
-      }
-      const pick = id => {
-        setSelected(id)
-        if (id && camera.current) {
-          const c = center(id)
-          camera.current.reveal(c.x, c.y)
-        }
-      }
+        camera.current.reveal(c.x, c.y, card ? card.offsetHeight + 12 : 0)
+      }, [selected])
+      const jump = id => { revealSelected.current = id; setSelected(id) }
+      const pick = id => { if (id) revealSelected.current = id; setSelected(id) }
       const locate = () => {
         if (!recommended) return
         const c = center(recommended)
@@ -1612,7 +1732,10 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
           how => notify(t(how === 'copied' ? 'toast.copied' : 'toast.exported')),
           () => notify(t('toast.exportFailed')))
       }
-      const legend = h('div', { className: 'tt-overlay tt-legend' },
+      if (cameraOut) cameraOut.current = { fit: () => camera.current && camera.current.fit(), locate }
+      const legend = !legendOpen
+        ? h('button', { type: 'button', className: 'tt-overlay tt-legend-toggle', 'aria-expanded': false, onClick: () => setLegendOpen(true) }, h('i', null, 'i'), t('legend.title'))
+        : h('div', { className: 'tt-overlay tt-legend tt-legend-open', role: 'button', tabIndex: 0, 'aria-expanded': true, onClick: () => setLegendOpen(false) },
         h('div', { className: 'tt-legend-row' },
           h('span', { className: 'tt-pill' }, h('i', { style: { background: 'linear-gradient(135deg,#c8834c,#eeb031)' } }), t('legend.lit')),
           h('span', { className: 'tt-pill' }, h('i', { style: { border: '1.5px dashed var(--tt-brand)' } }), t('legend.available')),
@@ -1620,22 +1743,58 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
         h(TypeLegend, { t, nodes }))
       const tools = h(React.Fragment, null,
         recommended ? h('button', { type: 'button', className: 'tt-icon-btn', title: t('action.recommend'), 'aria-label': t('action.recommend'), onClick: locate }, h(TargetIcon)) : null,
-        h('button', { type: 'button', className: 'tt-icon-btn', title: t('action.export'), 'aria-label': t('action.export'), onClick: doExport }, h(DownloadIcon)),
         h('span', { className: 'tt-zoom-sep' }))
-      return h('div', { className: 'tt-stage' },
+      return h('div', { className: 'tt-stage', ref: stageRef },
         h(Viewport, {
           t, width, height, fitKey, camera, tools,
-          focus: recommended ? center(recommended) : null,
+          onBlankTap: () => { setSelected(null); setLegendOpen(false) },
+          // An overview (the knowledge map) opens showing everything; a single tree opens on its next step.
+          focus: recommended && !overview ? center(recommended) : null,
           overlay: h(React.Fragment, null,
             legend,
             toasts.length ? h('div', { className: 'tt-overlay tt-toasts', role: 'status' }, toasts.map(x => h('div', { key: x.id, className: `tt-toast tt-toast-${x.kind}` }, x.kind === 'lit' ? h(StarIcon) : x.kind === 'unlock' ? h(SparkIcon, { size: 15 }) : null, x.text))) : null,
             current
-              ? h(Detail, { key: current.id, t, node: current, nodes, onJump: jump, onClose: () => setSelected(null), act, now, routeIds })
-              : h('div', { className: 'tt-overlay tt-hint' }, t('view.hint'))),
+              ? h(Detail, { key: current.id, t, node: current, nodes, onJump: jump, onClose: () => setSelected(null), act, now, routeIds, alsoIn: alsoInOf ? alsoInOf(current.id) : null, onOpenGoal, onMerge })
+              : h(React.Fragment, null,
+                h('div', { className: 'tt-overlay tt-hint' + (fab ? ' tt-hint-left' : '') }, t('view.hint')),
+                fab ? h('div', { className: 'tt-overlay tt-fab' }, fab) : null)),
         }, view => h(Graph, {
           t, nodes, goalIds, selected: current ? selected : null, hover, onSelect: pick, onHover: setHover,
-          now, coords, routeSteps, recommended, celebrate, view,
+          now, coords, routeSteps, recommended, celebrate, view, shared,
         })))
+    }
+
+    /** A tiny drawing of a tree for list cards: layout as on the canvas, coloured by progress. */
+    function TreeThumb({ nodes, width = 84, height = 60 }) {
+      if (!nodes.length) return null
+      const { coords, width: W, height: H } = layout(nodes)
+      const pad = 5
+      const k = Math.min((width - pad * 2) / W, (height - pad * 2) / H)
+      const ox = (width - W * k) / 2
+      const oy = (height - H * k) / 2
+      const byId = Object.fromEntries(nodes.map(n => [n.id, n]))
+      const w = NODE_W * k
+      const hh = Math.max(NODE_H * k, 3)
+      const medal = ['', '#c8834c', '#93a4bd', '#eeb031']
+      return h('svg', { className: 'tt-thumb', width, height, viewBox: `0 0 ${width} ${height}`, 'aria-hidden': true },
+        nodes.flatMap(n => n.prerequisites.filter(p => coords[p]).map(p => {
+          const a = coords[p]
+          const b = coords[n.id]
+          const lit = (byId[p].mastery || 0) >= 1 && (n.mastery || 0) >= 1
+          return h('line', {
+            key: `${p}>${n.id}`, x1: ox + (a.x + NODE_W / 2) * k, y1: oy + (a.y + NODE_H) * k, x2: ox + (b.x + NODE_W / 2) * k, y2: oy + b.y * k,
+            stroke: lit ? medal[Math.min(byId[p].mastery, n.mastery)] : 'var(--tt-thumb-line)', strokeWidth: lit ? 1.3 : 1,
+          })
+        })),
+        nodes.map(n => {
+          const c = coords[n.id]
+          const state = stateOf(n, byId)
+          return h('rect', {
+            key: n.id, x: ox + c.x * k, y: oy + c.y * k, width: w, height: hh, rx: Math.min(hh / 2, 3),
+            fill: state === 'lit' ? medal[n.mastery] : state === 'available' ? 'var(--tt-thumb-avail)' : 'var(--tt-thumb-locked)',
+            stroke: state === 'available' ? 'var(--tt-thumb-avail-line)' : 'none', strokeWidth: 1,
+          })
+        }))
     }
 
     function Empty({ t, body }) {
@@ -1656,6 +1815,11 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
       const goalIds = useMemo(() => new Set(goals.map(g => g.id)), [goalKey])
       const act = text => send(inputActions, text)
       const title = goals.map(g => g.name).join(' · ')
+      // Other goals in the learner's map that use the same point.
+      const lib = useLibrary()
+      const byNode = useMemo(() => goalsByNode(Object.values(lib.goals)), [lib])
+      const alsoInOf = id => (byNode[id] || []).filter(g => !goalIds.has(g.id))
+      const onMerge = node => act(mergePrompt(t, node))
       return h('div', { className: 'tt-scope tt-root' },
         h(Style),
         h(GoalForm, { t, onGoal: act }),
@@ -1666,7 +1830,7 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
               t, title, nodes, onReview: due => act(reviewPrompt(t, due)),
               extra: h('button', { type: 'button', className: 'tt-icon-btn', title: t('action.refresh'), 'aria-label': t('action.refresh'), onClick: () => act(t('prompt.refresh')) }, h(RefreshIcon)),
             }),
-            h(Stage, { t, title, nodes, goalIds, act, fitKey: `${goalKey}:${nodes.length}` })))
+            h(Stage, { t, title, nodes, goalIds, act, fitKey: `${goalKey}:${nodes.length}`, alsoInOf, onMerge })))
     }
 
     /** Live copy of the learner's whole map, read from the Host; falls back to the cache. */
@@ -1699,20 +1863,79 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
       return { sync, reload: load }
     }
 
-    /** Left-Sidebar main panel: every goal in the learner's map. */
+    const MAP_ID = '__map__'
+
+    /** Left-Sidebar main panel: every goal in the learner's map, plus all of them on one canvas. */
     function MainPage(props) {
       const t = props.t || boundT
       const lib = useLibrary()
       const { sync, reload } = useHostLibrary()
       const entries = Object.values(lib.goals).sort((a, b) => b.at - a.at)
       const [picked, setPicked] = useState(null)
-      const entry = entries.find(e => e.goal.id === picked) || entries[0] || null
+      const showMap = picked === MAP_ID && entries.length > 1
+      const entry = showMap ? null : entries.find(e => e.goal.id === picked) || entries[0] || null
       const start = text => props.startSession(text)
-      const resume = text => start(`${fill(t('prompt.resume'), { goal: entry.goal.name, goalId: entry.goal.id })}${text}`)
+      const resumeIn = goal => text => start(`${fill(t('prompt.resume'), { goal: goal.name, goalId: goal.id })}${text}`)
+      const resume = text => resumeIn(entry.goal)(text)
       const now = Date.now()
-      const entryId = entry ? entry.goal.id : ''
-      const goalIds = useMemo(() => new Set(entryId ? [entryId] : []), [entryId])
+      const entryId = showMap ? MAP_ID : entry ? entry.goal.id : ''
+      const byNode = useMemo(() => goalsByNode(Object.values(lib.goals)), [lib])
+      const shared = useMemo(() => Object.fromEntries(Object.entries(byNode).map(([id, gs]) => [id, gs.length])), [byNode])
+      const sharedCount = Object.values(shared).filter(n => n > 1).length
+      const allNodes = useMemo(() => mapNodes(Object.values(lib.goals)), [lib])
+      const goalIds = useMemo(() => new Set(entryId === MAP_ID ? Object.keys(lib.goals) : entryId ? [entryId] : []), [entryId, lib])
+      const onMerge = node => start(mergePrompt(t, node))
+      const onOpenGoal = g => setPicked(g.id)
+      // On the map, study a point in the conversation of a goal that contains it.
+      const mapAct = (text, node) => {
+        const owners = node ? byNode[node.id] : null
+        resumeIn(owners && owners.length ? owners[0] : entries[0].goal)(text)
+      }
       const syncText = sync.status === 'ok' ? `${t('sync.ok')} · ${ago(t, sync.at, now).trim()}` : t(`sync.${sync.status}`)
+      const libItem = e => {
+        const s = stats(e.nodes)
+        const due = reviewQueue(e.nodes, now).length
+        return h('button', {
+          key: e.goal.id, type: 'button', className: 'tt-lib-item',
+          'aria-current': entry && entry.goal.id === e.goal.id ? 'true' : 'false',
+          onClick: () => setPicked(e.goal.id),
+        },
+        h('span', { className: 'tt-lib-thumb' }, h(TreeThumb, { nodes: e.nodes, width: 64, height: 46 })),
+        h('span', { className: 'tt-lib-body' },
+          h('span', { className: 'tt-lib-name' }, h('span', null, e.goal.name), due ? h('b', { className: 'tt-chip-due' }, fill(t('review.short'), { n: due })) : null),
+          h('span', { className: 'tt-bar' }, h('i', { style: { width: `${s.total ? (s.lit / s.total) * 100 : 0}%` } })),
+          h('span', { className: 'tt-lib-row' }, h('span', null, fill(t('progress'), { lit: s.lit, total: s.total })), h('span', null, fill(t('medal.summary'), { b: s.medals[1], s: s.medals[2], g: s.medals[3] })))))
+      }
+      const mapItem = entries.length > 1 ? h('button', {
+        key: MAP_ID, type: 'button', className: 'tt-lib-item tt-lib-map',
+        'aria-current': showMap ? 'true' : 'false', onClick: () => setPicked(MAP_ID),
+      },
+      h('span', { className: 'tt-lib-thumb', 'aria-hidden': true }, '🗺️'),
+      h('span', { className: 'tt-lib-body' },
+        h('span', { className: 'tt-lib-name' }, h('span', null, t('map.title'))),
+        h('span', { className: 'tt-lib-row' }, h('span', null, fill(t('map.meta'), { points: allNodes.length, shared: sharedCount }))))) : null
+      let main
+      if (showMap) {
+        main = h(React.Fragment, null,
+          h(Hero, { t, title: t('map.title'), nodes: allNodes, onReview: due => start(reviewPrompt(t, due)) }),
+          h('div', { className: 'tt-map-hint' }, t('map.hint')),
+          h(Stage, {
+            key: MAP_ID, t, title: t('map.title'), nodes: allNodes, goalIds, act: mapAct, fitKey: `map:${allNodes.length}:${entries.length}`,
+            alsoInOf: id => byNode[id] || [], onOpenGoal, onMerge, shared, overview: true,
+          }))
+      } else if (entry) {
+        main = h(React.Fragment, null,
+          h(Hero, {
+            t, title: entry.goal.name, nodes: entry.nodes, onReview: due => resume(reviewPrompt(t, due)),
+            extra: h('button', { type: 'button', className: 'tt-btn tt-btn-primary', onClick: () => resume(t('prompt.continue')) }, t('action.continue')),
+          }),
+          h(Stage, {
+            key: entry.goal.id, t, title: entry.goal.name, nodes: entry.nodes, goalIds, act: resume, fitKey: `${entry.goal.id}:${entry.nodes.length}`,
+            alsoInOf: id => (byNode[id] || []).filter(g => g.id !== entry.goal.id), onOpenGoal, onMerge,
+          }))
+      } else {
+        main = h(Empty, { t, body: t('library.empty') })
+      }
       return h('div', { className: 'tt-scope tt-page' },
         h(Style),
         h('aside', { className: 'tt-aside' },
@@ -1724,27 +1947,9 @@ html.tt-grabbing,html.tt-grabbing *{-webkit-user-select:none!important;user-sele
             h('button', { type: 'button', className: 'tt-sync tt-sync-' + sync.status, title: t('action.refresh'), onClick: reload }, h('i'), syncText)),
           entries.length === 0
             ? h('div', { className: 'tt-note' }, t('library.empty'))
-            : h('div', { className: 'tt-lib' }, entries.map(e => {
-              const s = stats(e.nodes)
-              return h('button', {
-                key: e.goal.id, type: 'button', className: 'tt-lib-item',
-                'aria-current': entry && entry.goal.id === e.goal.id ? 'true' : 'false',
-                onClick: () => setPicked(e.goal.id),
-              },
-              h('span', { className: 'tt-lib-name' }, h('span', null, e.goal.name), reviewQueue(e.nodes, now).length ? h('b', { className: 'tt-chip-due' }, fill(t('review.short'), { n: reviewQueue(e.nodes, now).length })) : null),
-              h('span', { className: 'tt-bar' }, h('i', { style: { width: `${s.total ? (s.lit / s.total) * 100 : 0}%` } })),
-              h('span', { className: 'tt-lib-row' }, h('span', null, fill(t('progress'), { lit: s.lit, total: s.total })), h('span', null, fill(t('medal.summary'), { b: s.medals[1], s: s.medals[2], g: s.medals[3] }))))
-            })),
+            : h('div', { className: 'tt-lib' }, mapItem, entries.map(libItem)),
           sync.status === 'offline' && entries.length ? h('div', { className: 'tt-note' }, t('library.note')) : null),
-        h('main', { className: 'tt-main' },
-          entry === null
-            ? h(Empty, { t, body: t('library.empty') })
-            : h(React.Fragment, null,
-              h(Hero, {
-                t, title: entry.goal.name, nodes: entry.nodes, onReview: due => resume(reviewPrompt(t, due)),
-                extra: h('button', { type: 'button', className: 'tt-btn tt-btn-primary', onClick: () => resume(t('prompt.continue')) }, t('action.continue')),
-              }),
-              h(Stage, { key: entry.goal.id, t, title: entry.goal.name, nodes: entry.nodes, goalIds, act: resume, fitKey: `${entry.goal.id}:${entry.nodes.length}` }))))
+        h('main', { className: 'tt-main' }, main))
     }
 
     function TreeTitle({ useTabInfo }) {

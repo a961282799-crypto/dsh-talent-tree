@@ -42,10 +42,10 @@ function collect(tree, pred, out = []) {
 }
 const text = tree => (tree === null ? '' : typeof tree === 'string' ? tree : Array.isArray(tree) ? tree.map(text).join('') : tree.children.map(text).join(''))
 
-async function loadClient() {
+async function loadClient(globals = {}) {
   let module
   const source = await readFile(new URL('../client.js', import.meta.url), 'utf8')
-  const sandbox = { window: { __ModuleLoader__: { load: m => { module = m } } }, Date, Math, Object, Set, Array, String, Number, JSON, RegExp }
+  const sandbox = { window: { __ModuleLoader__: { load: m => { module = m } } }, Date, Math, Object, Set, Array, String, Number, JSON, RegExp, Map, ...globals }
   vm.runInNewContext(source, sandbox)
   assert.equal(module.id, 'dsh-talent-tree')
   const plugin = module.factory(name => {
@@ -309,6 +309,82 @@ test('each knowledge type gets its own card and badge shape, plus a legend', asy
   assert.match(node('auxiliary_function').props.className, /tt-shape-method/)
   const badge = collect(node('auxiliary_function'), el => String(el.props.className).startsWith('tt-badge '))[0]
   assert.match(badge.props.className, /tt-bshape-method/)
-  const legend = collect(tree, el => el.props.className === 'tt-overlay tt-legend')[0]
-  assert.match(text(legend), /概念.*定理.*方法/)
+  // The legend starts folded into a small button and opens on tap.
+  const toggle = collect(tree, el => el.props.className === 'tt-overlay tt-legend-toggle')[0]
+  assert.match(text(toggle), /图例/)
+  stateImpl = init => (init === false ? [true, () => {}] : defaultState(init))
+  try {
+    const open = render(fakeReact.createElement(body, { t, inputActions: { setDraft() {}, submit() {} }, useProjection: () => snapshot }))
+    const legend = collect(open, el => el.props.className === 'tt-overlay tt-legend tt-legend-open')[0]
+    assert.match(text(legend), /已点亮.*概念.*定理.*方法/)
+  } finally {
+    stateImpl = defaultState
+  }
+})
+
+/** A localStorage stand-in holding the cached map of every goal. */
+function storageWith(goals) {
+  const data = { 'dsh-talent-tree.library.v1': JSON.stringify({ goals }) }
+  return { getItem: k => data[k] ?? null, setItem: (k, v) => { data[k] = v } }
+}
+
+const secondGoal = {
+  goal: { id: 'taylor', name: '泰勒公式' },
+  nodes: [
+    { id: 'limit', name: '极限', type: 'concept', summary: '', prerequisites: [], mastery: 3, reviewedAt: Date.now() },
+    { id: 'derivative', name: '导数的定义', type: 'concept', summary: '', prerequisites: ['limit'], mastery: 0, weak: true },
+    { id: 'taylor', name: '泰勒公式', type: 'theorem', summary: '', prerequisites: ['derivative'], mastery: 0 },
+  ],
+  at: Date.now() - 1000,
+}
+
+test('detail card: evidence, other goals using the point, and a merge request', async () => {
+  const { registrations } = await loadClient({ localStorage: storageWith({ taylor: secondGoal }) })
+  const body = registrations.slots.find(s => s.options.name === 'sidebar.right.pane.tab').component
+  const t = translate(registrations.dicts.techtree)
+  const sent = []
+  const inputActions = { setDraft: d => sent.push(d), submit: () => sent.push('<submit>') }
+  const lit = { ...snapshot, nodes: snapshot.nodes.map(n => (n.id === 'limit' ? { ...n, evidence: '自己用 ε-δ 写出了数列极限的定义' } : n)) }
+  let nulls = 0
+  stateImpl = init => (init === null && nulls++ === 0 ? ['limit', () => {}] : defaultState(init))
+  try {
+    const tree = render(fakeReact.createElement(body, { t, inputActions, useProjection: () => lit }))
+    const card = collect(tree, el => String(el.props.className).startsWith('tt-card '))[0] || collect(tree, el => el.props.className === 'tt-card')[0]
+    assert.ok(collect(card, el => el.props.className === 'tt-card-grip').length, 'the card has a drag grip')
+    assert.match(text(collect(card, el => el.props.className === 'tt-evidence')[0]), /点亮依据：自己用 ε-δ 写出了数列极限的定义/)
+    const also = collect(card, el => el.props.className === 'tt-links tt-also')[0]
+    assert.match(text(also), /也出现在：泰勒公式/)
+    const merge = collect(card, el => el.props.className === 'tt-merge-link')[0]
+    merge.props.onClick()
+    assert.match(sent[0], /「极限」（limit）.*techtree_view（map=true）.*techtree_merge/)
+    assert.equal(sent[1], '<submit>')
+  } finally {
+    stateImpl = defaultState
+  }
+})
+
+test('left panel: thumbnails, and a knowledge map with every goal and shared points marked', async () => {
+  const first = { goal: snapshot.goals[0], nodes: snapshot.nodes, at: Date.now() }
+  const { registrations } = await loadClient({ localStorage: storageWith({ lagrange_mvt: first, taylor: secondGoal }) })
+  const main = registrations.slots.find(s => s.options.name === 'main')
+  const t = translate(registrations.dicts.techtree)
+  const injected = main.options.inject()
+  const page = render(fakeReact.createElement(main.component, { t, ...injected }))
+  const items = collect(page, el => String(el.props.className).startsWith('tt-lib-item'))
+  assert.deepEqual(items.map(el => el.props.className), ['tt-lib-item tt-lib-map', 'tt-lib-item', 'tt-lib-item'])
+  assert.match(text(items[0]), /知识地图.*9 个知识点 · 2 个被多个目标共用/)
+  assert.equal(collect(items[1], el => el.props.className === 'tt-thumb').length, 1, 'each goal has a thumbnail')
+  // Open the map: one canvas, every goal's points, shared ones badged.
+  let nulls = 0
+  stateImpl = init => (init === null && nulls++ === 0 ? ['__map__', () => {}] : defaultState(init))
+  try {
+    const map = render(fakeReact.createElement(main.component, { t, ...injected }))
+    const nodes = collect(map, el => el.tag === 'button' && String(el.props.className).includes('tt-node'))
+    assert.equal(nodes.length, 9)
+    const badges = collect(map, el => el.props.className === 'tt-shared').map(text)
+    assert.deepEqual(badges.sort(), ['🔗2', '🔗2'])
+    assert.equal(collect(map, el => String(el.props.className).includes('tt-goal-node')).length, 2, 'both goals are marked')
+  } finally {
+    stateImpl = defaultState
+  }
 })

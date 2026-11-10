@@ -67,7 +67,7 @@ test('plugin declares the services it uses and registers tools + prompt', async 
     const h = fakeHarness(join(dir, 'k.json'))
     await new Promise(r => setImmediate(r))
     assert.deepEqual(inject, ['tools', 'systemPrompt', 'sessionProjections'])
-    assert.deepEqual([...h.tools.keys()].sort(), ['techtree_plan', 'techtree_record', 'techtree_view'])
+    assert.deepEqual([...h.tools.keys()].sort(), ['techtree_merge', 'techtree_plan', 'techtree_record', 'techtree_view'])
     assert.equal(h.sections[0].name, 'plugin:techtree')
     assert.equal(h.projection().key, 'techtree')
     assert.equal(h.projection().wire.summary, false)
@@ -138,7 +138,7 @@ test('invalid calls throw model-readable errors and leave the file untouched', a
     await h.call('techtree_plan', plan)
     await assert.rejects(h.call('techtree_record', { node_id: 'limit', level: 1 }), /evidence is required/)
     // the store keeps working after a failed write attempt
-    await h.call('techtree_record', { node_id: 'limit', level: 2, evidence: 'proved a limit' })
+    await h.call('techtree_record', { node_id: 'limit', level: 1, evidence: 'proved a limit' })
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
@@ -177,8 +177,74 @@ test('hooks persist, goals are remembered, and the library route serves every go
     // Tutor prompt asks for hooks and allows skip-ahead challenges.
     assert.match(h.sections[0].text, /hook/)
     assert.match(h.sections[0].text, /Skip-ahead challenge/)
-    assert.match(h.sections[0].text, /Writing for the learner/)
+    assert.match(h.sections[0].text, /Writing node text/)
+    assert.match(h.sections[0].text, /REUSE EXISTING POINTS/)
     assert.match(h.sections[0].text, /glossary/)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('a second goal sees the map, gets a duplicate hint, and merging lights the shared point there', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'tt-'))
+  try {
+    const h = fakeHarness(join(dir, 'k.json'))
+    await new Promise(r => setImmediate(r))
+    await h.call('techtree_plan', plan)
+    await h.call('techtree_record', { node_id: 'derivative', level: 1, evidence: 'explained it' })
+    // A new conversation: its own session log, same knowledge map.
+    h.sessionState.clear()
+    const view = await h.call('techtree_view', { map: true })
+    assert.match(view.value.text, /derivative · 导数的定义 · 1/)
+    assert.equal(view.value.snapshot, null)
+    const planned = await h.call('techtree_plan', {
+      goal_id: 'taylor',
+      nodes: [
+        { id: 'derivative_definition', name: '导数定义', type: 'concept', summary: 's', prerequisites: [] },
+        { id: 'taylor', name: '泰勒公式', type: 'theorem', summary: 's', prerequisites: ['derivative_definition'] },
+      ],
+    })
+    assert.match(planned.value.text, /derivative_definition "导数定义" -> derivative "导数的定义"/)
+    const merged = await h.call('techtree_merge', { from_id: 'derivative_definition', into_id: 'derivative', reason: 'same' })
+    assert.match(merged.value.text, /mastery is now 1/)
+    assert.deepEqual(merged.state.nodes.map(n => [n.id, n.mastery]), [['limit', 0], ['derivative', 1], ['taylor', 0]])
+    // The left-Sidebar library shows the merged point lit in both goals.
+    const lib = await (await h.routes[0].fetch(new Request('http://x/api/techtree/library'))).json()
+    for (const goal of lib.goals) assert.equal(goal.nodes.find(n => n.id === 'derivative').mastery, 1)
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('goals saved in a conversation follow a merge of their goal point', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'tt-'))
+  try {
+    const h = fakeHarness(join(dir, 'k.json'))
+    await new Promise(r => setImmediate(r))
+    await h.call('techtree_plan', { goal_id: 'a2', nodes: [{ id: 'a2', name: 'A two', type: 'concept', summary: 's', prerequisites: [] }] })
+    await h.call('techtree_plan', { goal_id: 'b', nodes: [{ id: 'a', name: 'A', type: 'concept', summary: 's', prerequisites: [] }, { id: 'b', name: 'B', type: 'concept', summary: 's', prerequisites: ['a'] }] })
+    await h.call('techtree_merge', { from_id: 'a2', into_id: 'a', reason: 'same' })
+    const view = await h.call('techtree_view', {})
+    assert.deepEqual(view.state.goals.map(g => g.id).sort(), ['a', 'b'])
+  } finally {
+    await rm(dir, { recursive: true, force: true })
+  }
+})
+
+test('lighting rules: one level per check, no second raise of the same point right away', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'tt-'))
+  try {
+    const h = fakeHarness(join(dir, 'k.json'))
+    await new Promise(r => setImmediate(r))
+    await h.call('techtree_plan', plan)
+    await assert.rejects(h.call('techtree_record', { node_id: 'limit', level: 3, evidence: 'x' }), /at most one level/)
+    await h.call('techtree_record', { node_id: 'limit', level: 1, evidence: 'explained it' })
+    await assert.rejects(h.call('techtree_record', { node_id: 'limit', level: 2, evidence: 'x' }), /just went up a level/)
+    // Other points, and marking weak or unlit, are still fine.
+    await h.call('techtree_record', { node_id: 'derivative', level: 1, evidence: 'explained it' })
+    const weak = await h.call('techtree_record', { node_id: 'limit', level: 1, weak: true, evidence: 'gap shown' })
+    assert.equal(weak.state.nodes.find(n => n.id === 'limit').weak, true)
+    await assert.rejects(h.call('techtree_merge', { from_id: 'limit', into_id: 'derivative', reason: 'x' }), /prerequisite of the other/)
   } finally {
     await rm(dir, { recursive: true, force: true })
   }

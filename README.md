@@ -4,7 +4,7 @@
 
 DeepSeek Harness 插件：说一句"我想学会拉格朗日中值定理"，AI 把它拆成一张前置知识图，像游戏里的天赋树一样显示出来。你通过讲解或小测证明自己会了，对应节点才会点亮（铜 / 银 / 金）。
 
-> **English** — A DeepSeek Harness plugin that turns any learning goal into a game-like talent tree of prerequisite knowledge points. Each point lights up (bronze / silver / gold) only after you prove you understand it; every point comes with a "hook" (the most intriguing formula, idea or question about it), a plain-language summary and a symbol glossary. Includes a left-sidebar overview, a pannable / zoomable tree with learning routes, recommendations, light-up animations, skip-ahead challenges and PNG export.
+> **English** — A DeepSeek Harness plugin that turns any learning goal into a game-like talent tree of prerequisite knowledge points. Each point lights up (bronze / silver / gold) only after you prove you understand it; every point comes with a "hook" (the most intriguing formula, idea or question about it), a plain-language summary and a symbol glossary. All goals share one knowledge map, so a point you already know is reused (and stays lit) in every new tree; near-duplicates are flagged and can be merged. Includes a left-sidebar overview with a whole-map view, a pannable / zoomable tree with learning routes, recommendations, light-up animations, skip-ahead challenges and PNG export.
 
 ![左侧栏：所有学习目标和完整天赋树](docs/left-panel.png)
 
@@ -35,6 +35,8 @@ DeepSeek Harness 插件：说一句"我想学会拉格朗日中值定理"，AI �
 
 **左侧栏「天赋树」**（和「插件」「自动化任务」在一起）：打开后左边是你所有的学习目标，右边是选中目标的完整天赋树。数据直接从后台的 `knowledge.json` 读取（每 15 秒和切回窗口时自动刷新，左上角显示同步状态），连不上后台时显示上次同步的结果。在顶部输入框写"拉格朗日中值定理"点「生成」，会新建一个对话并填好提示词，按发送即可。点节点上的「开始学习」「检验我」或右上角「继续学习」，同样会新建一个对话接着学。
 
+**知识地图**：有两个以上目标时，左侧栏目标列表顶上会出现「知识地图」，把所有目标画在一张图上，被几个目标共用的知识点标 🔗。每个目标前面还有一张迷你天赋树缩略图，一眼看出学到哪了。
+
 **对话里的右侧边栏**：在对话中，输入框下方会出现进度小徽章，点一下打开当前对话的天赋树；也可以在右侧边栏引导页点「学习天赋树」。这里的按钮直接把提示词发进当前对话。
 
 **每个知识点的「钩子」**：AI 生成天赋树时，会给每个知识点配一句最能勾起兴趣的公式、想法或问题，比如「平均速度 60km/h，一定有某一刻速度表正好指着 60」。鼠标悬停在节点上就会冒出来，详情卡片顶部也会显示，开始学一个点时 AI 会先抛出它。旧的天赋树没有钩子的话，AI 下次查看时会自动补上。
@@ -51,7 +53,9 @@ DeepSeek Harness 插件：说一句"我想学会拉格朗日中值定理"，AI �
 
 **今日待复习**：顶部会出现「今日待复习 N」（输入框下的进度徽章、左侧栏目标列表上也有小标记），包括太久没复习的点和答题暴露漏洞、需要加固的点。点一下，AI 就在对话里把它们一个个考一遍：答得好刷新复习时间，答得不好降一级或标记需加固并当场补上。
 
-**不同类型，不同外形**（画布左上角有图例）：
+**详情卡片**：拖动顶部的小横条，往下拉关闭、往上拉展开；点画布空白处也能关闭。已点亮的点会显示「点亮依据」（AI 记录的你答对了什么），被别的目标共用的点会列出「也出现在」哪些目标（左侧栏里点一下就跳过去）。觉得两个点其实是同一个知识，点「和别的知识点重复了？」，AI 会先看你的整张知识地图，跟你确认后再合并，掌握程度保留较高的。
+
+**不同类型，不同外形**（画布左上角「图例」按钮点开）：
 
 | 类型 | 卡片 | 图标 |
 |---|---|---|
@@ -71,6 +75,12 @@ DeepSeek Harness 插件：说一句"我想学会拉格朗日中值定理"，AI �
 - 按住拖动（空白处或节点上都行）平移，拖动时不会选中文字；鼠标滚轮缩放（Windows 开了显示缩放也一样），触控板双指滑动平移、捏合缩放。
 - 右上角「－ / ＋ / 适应窗口」按钮；双击空白处复位；画布获得焦点后也能用方向键、`+` `-` `0`。
 
+### 教学质量
+
+- AI 一次只问一个问题；检验题要你自己讲、算或举例，不能只回答"懂了"。卡住时先给提示，不直接给答案。
+- 你发的练习题或资料，AI 会一步步带你做，而不是直接给出完整解答。
+- 插件端硬性把关：每个点一次最多升一级，同一个点一分钟内不能连升两次，一分钟内最多点亮 6 个点；超出的调用会被拒绝并告诉 AI 原因。
+
 ### 节点状态
 
 | 外观 | 含义 |
@@ -83,7 +93,7 @@ DeepSeek Harness 插件：说一句"我想学会拉格朗日中值定理"，AI �
 
 ### 跨对话的个人知识地图
 
-所有节点和掌握程度存在 `~/.dsh/techtree/knowledge.json`（设置了 `DSH_HOME` 时在 `$DSH_HOME/techtree/`）。新开一个对话学泰勒公式，"导数的定义"这类已经学过的节点会自动复用并保持点亮。想在新对话里接着看旧的天赋树，跟 AI 说"打开我的拉格朗日中值定理天赋树"即可（它会调用 `techtree_view` 并传 `goal_id`）。
+所有节点和掌握程度存在 `~/.dsh/techtree/knowledge.json`（设置了 `DSH_HOME` 时在 `$DSH_HOME/techtree/`）。**同一个知识只学一遍**：AI 规划新目标前会先用 `techtree_view(map=true)` 看你整张知识地图，已经有的知识点直接复用原来的 id；新开一个对话学泰勒公式，"导数的定义"这类学过的点会保持点亮。万一生成了名字相近的重复点，插件会提醒 AI 确认，确认是同一个就用 `techtree_merge` 合并，所有目标里引用它的地方一起改过来。想在新对话里接着看旧的天赋树，跟 AI 说"打开我的拉格朗日中值定理天赋树"即可（它会调用 `techtree_view` 并传 `goal_id`）。
 
 换存储位置：在 profile 的 `cordis.patch.yml` 里覆盖这一行（桌面版的文件在 `~/.dsh/profiles/desktop/cordis.patch.yml`，设置了 `DSH_HOME` 时在 `$DSH_HOME/profiles/desktop/`）：
 
@@ -99,17 +109,18 @@ DeepSeek Harness 插件：说一句"我想学会拉格朗日中值定理"，AI �
 
 | 文件 | 作用 |
 |---|---|
-| `index.js` | Host 端：三个工具、教学规则提示词、`techtree` 会话投影、知识地图读写、左侧栏用的 `GET /api/techtree/library`（走桌面版登录校验） |
-| `graph.js` | 纯逻辑：校验、按 id/名称去重合并、环检测、前置闭包、节点状态 |
-| `client.js` | 界面：左侧栏「天赋树」入口和主面板、右侧边栏页面、可拖动缩放的节点图（路线、推荐、钩子气泡、点亮动画、导出 PNG）、composer 下方的进度徽章 |
+| `index.js` | Host 端：四个工具、教学规则提示词、`techtree` 会话投影、知识地图读写、左侧栏用的 `GET /api/techtree/library`（走桌面版登录校验） |
+| `graph.js` | 纯逻辑：校验、按 id/名称去重合并、相似名称检测、合并重复知识点、环检测、前置闭包、节点状态、知识地图摘要 |
+| `client.js` | 界面：左侧栏「天赋树」入口和主面板（目标缩略图、知识地图）、右侧边栏页面、可拖动缩放的节点图（路线、推荐、钩子气泡、点亮动画、可拖动的详情卡片、导出 PNG）、composer 下方的进度徽章 |
 | `test/` | `npm test`（Node 22+），覆盖图逻辑、工具→投影数据流、界面渲染 |
 | `docs/` | README 用的截图（不随 npm 包发布） |
 
 ### 模型能用的工具
 
 - `techtree_plan(goal_id, nodes[])`：生成或扩展天赋树，每个节点带 `hook`（钩子）。依赖不存在或成环时会报错让模型重来。
-- `techtree_record(node_id, level 0-3, weak?, evidence)`：记录掌握程度，必须写明证据。
-- `techtree_view(goal_id?)`：读取当前进度，带上 `goal_id` 可以把旧目标拉进当前对话。
+- `techtree_record(node_id, level 0-3, weak?, evidence)`：记录掌握程度，必须写明证据（详情卡片里显示为「点亮依据」）。一次最多升一级。
+- `techtree_view(goal_id?, map?)`：读取当前进度，带上 `goal_id` 可以把旧目标拉进当前对话；`map=true` 时附上整张知识地图的摘要，供规划时复用已有知识点。
+- `techtree_merge(from, into)`：把重复的知识点合并到另一个，掌握程度取较高的；有前置关系或会成环时拒绝。
 
 ### 数据流
 
@@ -117,12 +128,14 @@ DeepSeek Harness 插件：说一句"我想学会拉格朗日中值定理"，AI �
 
 ### 对模型上下文的影响
 
-- 系统提示词增加一段固定的教学规则（约 750 token），内容不变，不影响 KV 缓存复用。
-- 三个工具的 schema。
+- 系统提示词增加一段固定的教学规则（约 1,600 token），内容不变，不影响 KV 缓存复用。
+- 四个工具的 schema。
+- 知识地图摘要只在 AI 调用 `techtree_view(map=true)` 时出现在工具结果里。
 - 天赋树内容只出现在工具结果里，不进系统提示词。
 
 ## 已知限制
 
+- 详情卡片里的「和别的知识点重复了？」不能直接选点合并，而是把请求发给 AI，由 AI 确认后调用 `techtree_merge`。
 - 侧边栏不会在生成天赋树后自动弹出，需要点进度徽章或从引导页打开。
 - 从左侧栏发起的学习会新建对话并填好提示词，需要自己按发送。
 - 在另一个对话里点亮的节点，要等当前对话下一次调用 techtree 工具（或点「刷新」）才会更新。

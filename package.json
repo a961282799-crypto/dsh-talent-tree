@@ -1,6 +1,6 @@
 {
   "name": "dsh-talent-tree",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Learning talent tree for DeepSeek Harness: break a topic into prerequisite knowledge points and light them up as you master them.",
   "keywords": [
     "dsh",
